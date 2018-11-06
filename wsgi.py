@@ -24,6 +24,7 @@ def run():
 def status():
     response = requests.get(uri + '/status')
     return response.text
+    return render_template('result.html', message=str(response.text))
 
 if __name__ == '__main__':
    application.run()
