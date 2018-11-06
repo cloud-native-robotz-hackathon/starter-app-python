@@ -1,14 +1,14 @@
 from flask import Flask, render_template
 import requests
-app = Flask(__name__)
+application = Flask(__name__)
 
 uri = 'http://hub-controller-live-hub-controller.apps-9d00.generic.opentlc.com/api/robot'
 
-@app.route('/')
+@application.route('/')
 def index():
     return render_template('./index.html')
 
-@app.route('/run')
+@application.route('/run')
 def run():
     response = requests.get(uri + '/power')
     if response.status_code != 200:
@@ -22,7 +22,7 @@ def run():
     return response.text    
 
     
-@app.route('/status')
+@application.route('/status')
 def status():
     response = requests.get(uri + '/status')
     if response.status_code != 200:
@@ -31,4 +31,4 @@ def status():
     return response.text
 
 if __name__ == '__main__':
-   app.run()
+   application.run()
