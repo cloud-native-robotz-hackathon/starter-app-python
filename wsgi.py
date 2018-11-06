@@ -6,7 +6,7 @@ uri = 'http://hub-controller-live-hub-controller.apps-9d00.generic.opentlc.com/a
 
 @application.route('/')
 def index():
-    return render_template('./index.html', hubcontrol = uri)
+    return render_template('index.html')
 
 @application.route('/run')
 def run():
