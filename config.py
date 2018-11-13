@@ -6,4 +6,4 @@ threads = int(os.environ.get('GUNICORN_THREADS', '1'))
 forwarded_allow_ips = '*'
 secure_scheme_headers = { 'X-Forwarded-Proto': 'https' }
 
-URI = 'http://hub-controller-live-hub-controller.apps-9d00.generic.opentlc.com/api/robot'
+URI = 'https://api-2445582274375.staging.gw.apicast.io:443/api/robot/'
