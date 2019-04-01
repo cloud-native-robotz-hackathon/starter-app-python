@@ -11,21 +11,9 @@ def index():
     return render_template('index.html')
 
 @application.route('/run')
-def run():
-    min_dist = 150
-    noproblemo = True
-    while noproblemo:
-       response = requests.get(application.config['URI'] + '/distance' + '?user_key=' + application.config['APITOKEN'], headers=headers)
-       print "Distance: " + response.text
-       if int(response.text) > min_dist:
-          response_drive = requests.post(application.config['URI'] + '/forward/10' + '?user_key=' + application.config['APITOKEN'], headers=headers)
-          time.sleep(1)
-       else:
-          noproblemo = False
-    
     # response = requests.get(application.config['URI'] + '/power' + '?user_key=' + application.config['APITOKEN'], headers=headers)
     # Example GET invokation of the Robot API       
-     #response = requests.get(application.config['URI'] + '/distance' + '?user_key=' + application.config['APITOKEN'], headers=headers)  
+    response = requests.get(application.config['URI'] + '/distance' + '?user_key=' + application.config['APITOKEN'], headers=headers)  
         
      # Example POST invokation of the Robot API       
      #response = requests.post(application.config['URI'] + '/forward/5' + '?user_key=' + application.config['APITOKEN'], headers=headers)
