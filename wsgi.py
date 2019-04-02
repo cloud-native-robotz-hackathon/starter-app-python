@@ -11,6 +11,7 @@ def index():
     return render_template('index.html')
 
 @application.route('/run')
+def run():
     # response = requests.get(application.config['URI'] + '/power' + '?user_key=' + application.config['APITOKEN'], headers=headers,verify=False)
     # Example GET invokation of the Robot API       
     response = requests.get(application.config['URI'] + '/distance' + '?user_key=' + application.config['APITOKEN'], headers=headers, verify=False)  
