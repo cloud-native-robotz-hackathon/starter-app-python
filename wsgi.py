@@ -22,7 +22,7 @@ def run():
     
 @application.route('/status')
 def status():
-    response = requests.get(application.config['URI'] + '/status' + '?user_key=' + application.config['APITOKEN'], headers=headers, verify=False)
+    response = requests.get(application.config['URI'] + '/remote_status' + '?user_key=' + application.config['APITOKEN'], headers=headers, verify=False)
     return render_template('result.html', message=str(response.text))
 
 if __name__ == '__main__':
