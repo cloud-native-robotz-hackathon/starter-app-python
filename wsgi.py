@@ -16,8 +16,10 @@ def run():
     # Example GET invokation of the Robot API       
     response = requests.get(application.config['URI'] + '/distance' + '?user_key=' + application.config['APITOKEN'], headers=headers, verify=False)  
         
-     # Example POST invokation of the Robot API       
-     #response = requests.post(application.config['URI'] + '/forward/5' + '?user_key=' + application.config['APITOKEN'], headers=headers, verify=False)
+    # Example POST invokation of the Robot API       
+    #response = requests.post(application.config['URI'] + '/forward/5' + '?user_key=' + application.config['APITOKEN'], headers=headers, verify=False)
+    #params = {'user_key': application.config['APITOKEN']} 
+    #response = requests.post(application.config['URI'] + '/forward/5', params=params, headers=headers, verify=False)    
     return render_template('result.html', message=str(response.text))
     
 @application.route('/status')
