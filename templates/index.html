@@ -8,15 +8,44 @@
    
    <body>
       
-      <form action = "/status" method = "get">
-         <p>Test the state of your Robot:</p>
-         <p><input type = "submit" value = "State" /></p>
-      </form>
+      <p>Robot State:</p>
+      <script>
+         function state() {
+             var http = new XMLHttpRequest();
+             var url = 'status';
+             var params = '';
+             http.open('POST', url, false);
+             http.send(params);
+             var response = http.responseText
+             document.getElementById("state").innerHTML = response;
+         }
+      </script>
+ 
+      <button onclick="state()">Test</button>
+      
+      <p id="state"></p>
 
-      <form action = "/run" method = "get">
-         <p>Execute your Robot App:</p>
-         <p><input type = "submit" value = "Run"></p>
-      </form> 
+      <p>Execute your run function:</p>
+      <script>
+         function run() {
+             var http = new XMLHttpRequest();
+             var url = 'run';
+             var params = '';
+             http.open('POST', url, false);
+             http.send(params);
+             var response = http.responseText
+             document.getElementById("output").innerHTML = response;
+         }
+      </script>
+ 
+      <button onclick="run()">Test</button>
+      
+      <p id="output"></p>
+      
+      <form action = "/" method = "get">
+         <p>Get Back:</p>
+         <p><input type = "submit" value = "Home" /></p>
+      </form>
    
     </body>
 </html>
