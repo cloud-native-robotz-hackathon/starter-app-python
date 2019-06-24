@@ -7,5 +7,5 @@ forwarded_allow_ips = '*'
 secure_scheme_headers = { 'X-Forwarded-Proto': 'https' }
 timeout = 240
 
-URI = 'http://hub-controller-live-hub-controller.apps-9d00.generic.opentlc.com/api/robot'
+URI = 'https://api-2445582274375.production.gw.apicast.io/api/robot'
 APITOKEN = ''
