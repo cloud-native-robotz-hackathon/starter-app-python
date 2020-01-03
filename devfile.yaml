@@ -4,7 +4,7 @@ metadata:
 projects:
   - name: starter-app-python
     source:
-      location: 'https://github.com/goetzrieger/starter-app-python.git'
+      location: 'https://github.com/cloud-native-robotz-hackathon/starter-app-python.git'
       type: git
       branch: master
 components:
@@ -16,7 +16,6 @@ components:
     type: dockerimage
     alias: python
     image: quay.io/grieger/che7-oc-odo-ocp4-stack
-apiVersion: 1.0.0
 commands:
   - name: run
     actions:
