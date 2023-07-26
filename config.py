@@ -7,5 +7,5 @@ forwarded_allow_ips = '*'
 secure_scheme_headers = { 'X-Forwarded-Proto': 'https' }
 timeout = 240
 
-URI = 'https://api-2445582274375.production.gw.apicast.io/api/robot'
+URI = '10.89.114.152'
 APITOKEN = ''

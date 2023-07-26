@@ -12,20 +12,20 @@ def index():
 @application.route('/run', methods=['POST'])
 def run():
     # Example GET invocations of the Robot API       
-    #response = requests.get(application.config['URI'] + '/distance' + '?user_key=' + application.config['APITOKEN'], verify=False)  
+    response = requests.get('http://' + application.config['URI'] + ':5000/distance', verify=False)  
     # response = requests.get(application.config['URI'] + '/power' + '?user_key=' + application.config['APITOKEN'],verify=False)
     
     # Example POST invocation of the Robot API for e.g. moving  
-    data = {'user_key': application.config['APITOKEN']} 
-    response = requests.post(application.config['URI'] + '/forward/10', data=data, verify=False)
+    response = requests.post('http://' + application.config['URI'] + ':5000/forward/10', verify=False)
     return response.text
-    #return render_template('result.html', message=str(response.text))
-    
+    #return render_template('result.html', message=str(response.text))	
+
+   
 @application.route('/status', methods=['POST'])
 def status():
-    response = requests.get(application.config['URI'] + '/remote_status' + '?user_key=' + application.config['APITOKEN'], verify=False)
+    response = requests.get(application.config['URI'] + '/remote_status' , verify=False)
     return response.text
     #return render_template('result.html', message=str(response.text))
 
 if __name__ == '__main__':
-   application.run()
+   application.run(host="0.0.0.0")
