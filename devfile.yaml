@@ -1,29 +1,28 @@
----
-apiVersion: 1.0.0
+schemaVersion: 2.1.0
 metadata:
   name: starter-app-python
-projects:
-  - name: starter-app-python
-    source:
-      location: 'https://github.com/cloud-native-robotz-hackathon/starter-app-python.git'
-      type: git
-      branch: master
 components:
-  - id: ms-python/python/latest
-    memoryLimit: 512Mi
-    type: chePlugin
-  - mountSources: true
-    memoryLimit: 1024Mi
-    type: dockerimage
-    alias: python
-    image: quay.io/grieger/che7-oc-odo-ocp4-stack
+  - name: python
+    container:
+      image: registry.redhat.io/devspaces/udi-rhel8:3.7
+      volumeMounts:
+        - name: venv
+          path: /home/user/.venv
+      memoryLimit: 2G
+      mountSources: true
+  - name: venv
+    volume:
+      size: 1G
 commands:
-  - name: run
-    actions:
-      - workdir: '${CHE_PROJECTS_ROOT}/starter-app-python'
-        type: exec
-        command: >-
-          pip install -r ${CHE_PROJECTS_ROOT}/starter-app-python/requirements.txt && export
-          PYTHONDONTWRITEBYTECODE=1 && cd ${CHE_PROJECTS_ROOT}/starter-app-python && gunicorn -b
-          0.0.0.0:8080 wsgi
-        component: python
+  - id: run
+    exec:
+      label: "Run the application"
+      component: python
+      workingDir: ${PROJECTS_ROOT}/starter-app-python
+      commandLine: >-
+          pip install -r requirements.txt && export
+          PYTHONDONTWRITEBYTECODE=1 && export 
+          PATH=$PATH:/home/user/.local/bin && gunicorn 
+          -b 0.0.0.0:8080 app --reload
+      group:
+        kind: run

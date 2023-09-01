@@ -1,2 +1,44 @@
 = Robot Controller Application Template - Python/Flask
-Test
+
+== Running the App Locally
+
+Install the required packages
+
+[source,bash,options="nowrap",subs="attributes+"]
+----
+$ cd starter-app-python
+
+$ pip install -r requirements.txt
+
+----
+
+To run this application on your local host:
+
+[source,bash,options="nowrap",subs="attributes+"]
+----
+
+$ gunicorn -b 0.0.0.0:8080 app --reload
+----
+
+== Interacting with the Application Locally
+
+To interact with your booster while it's running locally, you can either open the page at `http://localhost:5000` or use the `curl` command:
+
+[source,bash,options="nowrap",subs="attributes+"]
+----
+$ curl http://localhost:8080/status
+
+
+$ curl -X POST http://localhost:8080/run
+
+----
+
+
+== Updating the Application
+To update your application:
+
+Changing python files will automatically reload the application. For chnages in static files (*.html) you will have to restart the app
+
+== Running the Application on the OpenShift Cluster
+
+The app is prepared with a S2I configuration. You can directly create a pipeline from this repo in the OpenSHift Developer View.
