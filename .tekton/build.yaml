@@ -8,7 +8,7 @@ metadata:
   annotations:
     pipelinesascode.tekton.dev/on-event: "[push]"
     # The branch or tag we are targeting (ie: main, refs/tags/*)
-    pipelinesascode.tekton.dev/on-target-branch: "[main,devel]"
+    pipelinesascode.tekton.dev/on-target-branch: "[master,devel]"
 
     pipelinesascode.tekton.dev/task: "git-clone"
     pipelinesascode.tekton.dev/task-1: "buildah"
