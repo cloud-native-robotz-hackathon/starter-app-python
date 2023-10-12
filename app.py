@@ -35,7 +35,7 @@ def run():
     #    classes_count=len(class_labels),
     #    confidence_threshold=0.15,
     #    iou_threshold=0.2
-    )
+    #)
     # objects will then contain a list if tensors with box coordinated, confidence and class of detected object
     #print('Detected {} obejects', len(objects))
 
