@@ -1,3 +1,5 @@
 gunicorn
 Flask
 requests
+opencv-python
+

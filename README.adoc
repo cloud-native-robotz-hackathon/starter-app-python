@@ -12,6 +12,14 @@ $ pip install -r requirements.txt
 
 ----
 
+
+In the config.py set to following variables
+
+- ROBOT_API = URL of the robot REST Api
+- API_TOKEN = The token fo your robot/team
+- INFERENCING_API = The Url of the object detection inferencing service
+
+
 To run this application on your local host:
 
 [source,bash,options="nowrap",subs="attributes+"]
