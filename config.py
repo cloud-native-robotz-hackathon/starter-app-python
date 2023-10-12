@@ -8,5 +8,6 @@ forwarded_allow_ips = '*'
 secure_scheme_headers = { 'X-Forwarded-Proto': 'https' }
 timeout = 240
 
-URI = '10.89.114.152'
-APITOKEN = ''
+ROBOT_API = ''
+API_TOKEN = ''
+INFERENCING_API = ''
