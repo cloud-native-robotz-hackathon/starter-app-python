@@ -1,5 +1,6 @@
 gunicorn
 Flask
 requests
-opencv-python
-
+opencv-python-headless
+torch
+torchvision
