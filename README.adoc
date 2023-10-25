@@ -1,5 +1,29 @@
 = Robot Controller Application Template - Python/Flask
 
+== Running the App in DevSpaces
+
+Start Workspace based in `https://github.com/cloud-native-robotz-hackathon/starter-app-python.git`
+
+=== via Task
+
+F1 -> Tasks: Run Task -> devfile -> devfile: “Run the application"
+
+
+=== via Terminal
+
+Install requirements
+[source,bash,options="nowrap",subs="attributes+"]
+----
+$ python -m venv ~/.venv/
+$ source ~/.venv/bin/activate
+$ cd starter-app-python
+
+$ pip install -r requirements.txt
+$ gunicorn -b 0.0.0.0:8080 app --reload
+----
+
+
+
 == Running the App Locally
 
 Install the required packages
@@ -9,7 +33,7 @@ Install the required packages
 $ cd starter-app-python
 
 $ pip install -r requirements.txt
-
+$ gunicorn -b 0.0.0.0:8080 app --reload
 ----
 
 
