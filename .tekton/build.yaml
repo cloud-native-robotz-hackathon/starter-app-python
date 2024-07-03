@@ -29,6 +29,10 @@ spec:
   params:
     - name: source_branch
       value: '{{ source_branch }}'
+    - name: repo_url
+      value: '{{ repo_url }}'
+    - name: target_namespace
+      value: '{{ target_namespace }}'
 
   taskRunSpecs:
     # Build the amd64 image on dedicated amd64 hardware
@@ -48,6 +52,11 @@ spec:
       taskPodTemplate:
         nodeSelector:
           kubernetes.io/arch: arm64
+        tolerations:
+          - key: "kubernetes.io/arch"
+            operator: "Equal"
+            value: "arm"
+            effect: "NoSchedule"
       # validation failed: computeResources requires "enable-api-fields" feature gate to be "alpha" but it is "stable":
       # computeResources:
       #   requests:
@@ -60,15 +69,16 @@ spec:
   pipelineSpec:
     params:
       - name: source_branch
+      - name: repo_url
+      - name: target_namespace
 
     workspaces:
       - name: source
-      - name: push-secret
     tasks:
       - name: git-clone
         params:
           - name: url
-            value: 'https://github.com/cloud-native-robotz-hackathon/starter-app-python.git'
+            value: $(params.repo_url)
           - name: revision
             value: $(params.source_branch)
         taskRef:
@@ -81,7 +91,7 @@ spec:
       - name: build-on-arm64
         params:
           - name: IMAGE
-            value: 'quay.io/cloud-native-robotz-hackathon/starter-app-python:$(params.source_branch)-arm64'
+            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(params.source_branch)-arm64'
           - name: DOCKERFILE
             value: ./Containerfile
         runAfter:
@@ -92,13 +102,11 @@ spec:
         workspaces:
           - name: source
             workspace: source
-          - name: dockerconfig
-            workspace: push-secret
 
       - name: build-on-amd64
         params:
           - name: IMAGE
-            value: 'quay.io/cloud-native-robotz-hackathon/starter-app-python:$(params.source_branch)-amd64'
+            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(params.source_branch)-amd64'
           - name: DOCKERFILE
             value: ./Containerfile
         runAfter:
@@ -109,15 +117,13 @@ spec:
         workspaces:
           - name: source
             workspace: source
-          - name: dockerconfig
-            workspace: push-secret
 
       - name: create-and-push-manifest
         runAfter:
           - build-on-amd64
         params:
           - name: IMAGE
-            value: 'quay.io/cloud-native-robotz-hackathon/starter-app-python:$(params.source_branch)'
+            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(params.source_branch)'
           - name: IMAGE_URL_AMD64
             value: $(tasks.build-on-amd64.results.IMAGE_URL)
           - name: IMAGE_URL_ARM64
@@ -125,8 +131,7 @@ spec:
         workspaces:
           - name: source
             workspace: source
-          - name: dockerconfig
-            workspace: push-secret
+
         taskSpec:
           volumes:
             - emptyDir: {}
@@ -143,8 +148,7 @@ spec:
             - description: Reference of the image buildah will produce.
               name: IMAGE
               type: string
-            - default: >-
-                registry.redhat.io/rhel8/buildah@sha256:00795fafdab9bbaa22cd29d1faa1a01e604e4884a2c935c1bf8e3d1f0ad1c084
+            - default: registry.redhat.io/rhel9/buildah:9.4
               description: The location of the buildah builder image.
               name: BUILDER_IMAGE
               type: string
@@ -204,6 +208,4 @@ spec:
             requests:
               storage: 1Gi
           volumeMode: Filesystem
-    - name: push-secret
-      secret:
-        secretName: quay-push-bot
+
