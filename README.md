@@ -1,76 +1,71 @@
-= Robot Controller Application Template - Python/Flask
+# Robot Controller Application Template - Python/Flask
 
-== Running the App in DevSpaces
+## Running the App in DevSpaces
 
 Start Workspace based in `https://github.com/cloud-native-robotz-hackathon/starter-app-python.git`
 
-=== via Task
+### via Task
 
 F1 -> Tasks: Run Task -> devfile -> devfile: “Run the application"
 
 
-=== via Terminal
+### via Terminal
 
 Install requirements
-[source,bash,options="nowrap",subs="attributes+"]
-----
+```bash
 $ python -m venv ~/.venv/
 $ source ~/.venv/bin/activate
 $ cd starter-app-python
 
 $ pip install -r requirements.txt
 $ gunicorn -b 0.0.0.0:8080 app --reload
-----
+```
 
 
 
-== Running the App Locally
+## Running the App Locally
 
 Install the required packages
 
-[source,bash,options="nowrap",subs="attributes+"]
-----
+```bash
 $ cd starter-app-python
 
 $ pip install -r requirements.txt
 $ gunicorn -b 0.0.0.0:8080 app --reload
-----
+```
 
 
 In the config.py set to following variables
 
-- ROBOT_API = URL of the robot REST Api
-- API_TOKEN = The token fo your robot/team
-- INFERENCING_API = The Url of the object detection inferencing service
+- `ROBOT_API` = URL of the robot REST Api
+- `API_TOKEN` = The token fo your robot/team
+- `INFERENCING_API` = The Url of the object detection inferencing service
 
 
 To run this application on your local host:
 
-[source,bash,options="nowrap",subs="attributes+"]
-----
-
+```bash
 $ gunicorn -b 0.0.0.0:8080 app --reload
-----
+```
 
-== Interacting with the Application Locally
+## Interacting with the Application Locally
 
 To interact with your booster while it's running locally, you can either open the page at `http://localhost:5000` or use the `curl` command:
 
-[source,bash,options="nowrap",subs="attributes+"]
-----
+```bash
 $ curl http://localhost:8080/status
 
 
 $ curl -X POST http://localhost:8080/run
 
-----
+```
 
 
-== Updating the Application
+## Updating the Application
 To update your application:
 
 Changing python files will automatically reload the application. For chnages in static files (*.html) you will have to restart the app
 
-== Running the Application on the OpenShift Cluster
+## Running the Application on the OpenShift Cluster
 
 The app is prepared with a S2I configuration. You can directly create a pipeline from this repo in the OpenSHift Developer View.
