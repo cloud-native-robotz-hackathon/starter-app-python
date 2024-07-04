@@ -1,14 +1,14 @@
 apiVersion: tekton.dev/v1beta1
 kind: PipelineRun
 metadata:
-  name: build
+  name: release-tag
 
   labels:
     tekton.dev/pipeline: build
   annotations:
     pipelinesascode.tekton.dev/on-event: "[push]"
     # The branch or tag we are targeting (ie: main, refs/tags/*)
-    pipelinesascode.tekton.dev/on-target-branch: "[master,devel]"
+    pipelinesascode.tekton.dev/on-target-branch: "[refs/tags/*]"
 
     pipelinesascode.tekton.dev/task: "git-clone"
     pipelinesascode.tekton.dev/task-1: "buildah"
@@ -33,6 +33,8 @@ spec:
       value: '{{ repo_url }}'
     - name: target_namespace
       value: '{{ target_namespace }}'
+    - name: revision
+      value: '{{ revision }}'
 
   taskRunSpecs:
     # Build the amd64 image on dedicated amd64 hardware
@@ -71,6 +73,7 @@ spec:
       - name: source_branch
       - name: repo_url
       - name: target_namespace
+      - name: revision
 
     workspaces:
       - name: source
@@ -80,7 +83,9 @@ spec:
           - name: url
             value: $(params.repo_url)
           - name: revision
-            value: $(params.source_branch)
+            value: $(params.revision)
+          - name: depth
+            value: 0
         taskRef:
           kind: ClusterTask
           name: git-clone
@@ -88,14 +93,31 @@ spec:
           - name: output
             workspace: source
 
+      - name: tag
+        params:
+          - name: source_branch
+            value: $(params.source_branch)
+        taskSpec:
+          results:
+            - name: name
+              descripte: Clean tag based on source_branch
+          steps:
+            - name: transform-tag
+              image: registry.access.redhat.com/ubi9/ubi-micro:latest
+              script: |
+                set -x
+                SOURCE_BRANCH="$(params.source_branch)"
+                echo -n ${SOURCE_BRANCH#refs/tags/} | tee $(results.name.path)
+
       - name: build-on-arm64
         params:
           - name: IMAGE
-            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(params.source_branch)-arm64'
+            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(tasks.tag.results.name)-arm64'
           - name: DOCKERFILE
             value: ./Containerfile
         runAfter:
           - git-clone
+          - tag
         taskRef:
           kind: ClusterTask
           name: buildah
@@ -106,7 +128,7 @@ spec:
       - name: build-on-amd64
         params:
           - name: IMAGE
-            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(params.source_branch)-amd64'
+            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(tasks.tag.results.name)-amd64'
           - name: DOCKERFILE
             value: ./Containerfile
         runAfter:
@@ -123,7 +145,7 @@ spec:
           - build-on-amd64
         params:
           - name: IMAGE
-            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(params.source_branch)'
+            value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(tasks.tag.results.name)'
           - name: IMAGE_URL_AMD64
             value: $(tasks.build-on-amd64.results.IMAGE_URL)
           - name: IMAGE_URL_ARM64
@@ -208,4 +230,3 @@ spec:
             requests:
               storage: 1Gi
           volumeMode: Filesystem
-
