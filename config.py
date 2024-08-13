@@ -9,5 +9,6 @@ secure_scheme_headers = { 'X-Forwarded-Proto': 'https' }
 timeout = 240
 
 ROBOT_API = ''
-API_TOKEN = ''
+ROBOT_NAME = ''
 INFERENCING_API = ''
+INFERENCING_API_TOKEN  = ''
