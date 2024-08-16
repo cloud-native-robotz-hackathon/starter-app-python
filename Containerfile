@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/python-38:1-129
+FROM registry.access.redhat.com/ubi9/python-312:1-20.1722518948
 ENV PORT 5000
 EXPOSE 5000
 WORKDIR /usr/src/app
