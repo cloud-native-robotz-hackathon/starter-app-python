@@ -1,10 +1,10 @@
-schemaVersion: 2.1.0
+schemaVersion: 2.2.2
 metadata:
   name: starter-app-python
 components:
   - name: python
     container:
-      image: registry.redhat.io/devspaces/udi-rhel8:3.7
+      image: registry.redhat.io/devspaces/udi-rhel8@sha256:bc5d28c434089a312ab0944662e7702481ca4e898ef278cf61c0f683f35718df
       volumeMounts:
         - name: venv
           path: /home/user/.venv
