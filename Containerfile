@@ -1,6 +1,6 @@
 FROM registry.access.redhat.com/ubi9/python-312:1-20.1722518948
-ENV PORT 5000
-EXPOSE 5000
+ENV PORT 8080
+EXPOSE 8080
 WORKDIR /usr/src/app
 
 COPY requirements.txt . 
