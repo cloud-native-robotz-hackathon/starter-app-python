@@ -7,7 +7,7 @@ from lib.object_detection import detect_objects
 application = Flask(__name__)
 application.config.from_object('config')
 
-class_labels = ['Laptop', 'Computer keyboard', 'Fedora']
+class_labels = ['Fedora', 'Ball', 'Tennisball']
 
 @application.route('/')
 def index():
@@ -37,7 +37,7 @@ def run():
     #    confidence_threshold=0.15,
     #    iou_threshold=0.2
     #)
-    ## objects will then contain a list if tensors with box coordinated, confidence and class of detected object
+    ## objects will then contain a list if tensors with box coordinatas, confidence score and class of detected object
     #print('Detected {} obejects', len(objects))
 
     return ('OK')  
