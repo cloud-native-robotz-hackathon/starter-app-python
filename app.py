@@ -43,8 +43,8 @@ def run():
     #    iou_threshold=0.2
     #)
 
-    ## objects will then contain a list if tensors with box coordinatas, confidence score and class of detected object
-    #print('Detected {} obejects', len(objects))
+    ## objects will then contain a list if tensors with box coordinates, confidence score and class of detected object
+    #print('Detected {} objects', len(objects))
 
     return ('OK')
 
