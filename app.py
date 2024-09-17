@@ -16,19 +16,24 @@ def index():
 @application.route('/run', methods=['POST'])
 def run():
     ## Example GET invocations of the Robot API
-    # response = requests.get('http://' + application.config['ROBOT_API'] + ':5000/distance' + '?user_key=' + application.config['ROBOT_NAME'], verify=False)
-    # response = requests.get(application.config['URI'] + '/power' + '?user_key=' + application.config['ROBOT_NAME'],verify=False)
+
+    ## Connect and get the status of the robot
+    # response = requests.get(application.config['ROBOT_API'] + '/status' + '?user_key=' + application.config['ROBOT_NAME'], verify=False)
+
+    ## Get the current power of the robot
+    # response = requests.get(application.config['ROBOT_API'] + '/power' + '?user_key=' + application.config['ROBOT_NAME'],verify=False)
 
     ## Example POST invocation of the Robot API for e.g. moving
-    # response = requests.post('http://' + application.config['ROBOT_API'] + ':5000/forward/10', verify=False)
+    #response = requests.post(application.config['ROBOT_API'] + '/forward/10',data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
 
     ## Example calling the ML inferencing endpoint for object detection
     ## get current camera image from robot
-    #img_response = requests.get(application.config['ROBOT_API'] + '/camera', verify=False)
+    #img_response = requests.get(application.config['ROBOT_API'] + '/camera', data={"user_key": application.config['ROBOT_NAME']}, verify=False)
+
     ## normalize image
     #image_data, ratio, dwdh = preprocess_encoded_image(img_response.text)
-    ## send image to object detection endpoint
 
+    ## send image to object detection endpoint
     #objects = detect_objects(
     #    image_data,
     #    application.config['INFERENCING_API'] ,
@@ -37,6 +42,7 @@ def run():
     #    confidence_threshold=0.15,
     #    iou_threshold=0.2
     #)
+
     ## objects will then contain a list if tensors with box coordinatas, confidence score and class of detected object
     #print('Detected {} obejects', len(objects))
 
