@@ -28,7 +28,7 @@ def run():
 
     ## Example calling the ML inferencing endpoint for object detection
     ## get current camera image from robot
-    #img_response = requests.get(application.config['ROBOT_API'] + '/camera', data={"user_key": application.config['ROBOT_NAME']}, verify=False)
+    #img_response = requests.get(application.config['ROBOT_API'] + '/camera'+ '?user_key=' + application.config['ROBOT_NAME'], verify=False)
 
     ## normalize image
     #image_data, ratio, dwdh = preprocess_encoded_image(img_response.text)
@@ -43,15 +43,26 @@ def run():
     #    iou_threshold=0.2
     #)
 
-    ## objects will then contain a list if tensors with box coordinates, confidence score and class of detected object
-    #print('Detected {} objects', len(objects))
+    ## objects will then contain a list if tensors with box coordinates, confidence score and class ( 0 = Fedora) of detected object (x left upper corner, y left upper corner,
+    ## x right lower corner, confidence score, class)
+    #print('objects found ->', objects)
+
+    ## Get the detected fedora object with the highest confidence score
+    #fedora = [0,0,0,0,0,0]
+
+    #for o in objects:
+    #    if o[-1] == 0 and fedora[-2] < o[-2]:
+    #        fedora = o
+
+    #if (fedora[-2] > 0):
+    #    print('Object with highest score -> [ confidence score : {},  x left upper corner : {}, y left upper corner : {}, x right lower corner{}, y right lower corner{}'.format(fedora[-2], fedora[0], fedora[1],fedora[2],fedora[3],))
 
     return ('OK')
 
 
 @application.route('/status', methods=['POST'])
 def status():
-    response = requests.get(application.config['URI'] + '/remote_status?user_key=' + application.config['ROBOT_NAME'], verify=False)
+    response = requests.get(application.config['ROBOT_API'] + '/remote_status?user_key=' + application.config['ROBOT_NAME'], verify=False)
     return response.text
 
 if __name__ == '__main__':
