@@ -5,6 +5,7 @@ from lib.preprocessing import preprocess_encoded_image
 from lib.object_detection import detect_objects
 import threading
 from collections import namedtuple
+import base64
 
 application = Flask(__name__)
 application.config.from_object('config')
@@ -56,12 +57,18 @@ def startRobot():
 def take_picture_and_detect_objects():
     ## Example calling the ML inferencing endpoint for object detection
     ## get current camera image from robot
+    print ('Taking picture from camera')
     img_response = requests.get(application.config['ROBOT_API'] + '/camera'+ '?user_key=' + application.config['ROBOT_NAME'], verify=False)
+    print ('Response status code -> ', img_response.status_code)
+
+    with open("static/current_view.jpg", "wb") as fh:
+        fh.write(base64.urlsafe_b64decode(img_response.text))
 
     ## normalize image
     image_data, ratio, dwdh = preprocess_encoded_image(img_response.text)
 
     ## send image to object detection endpoint
+    print ('Sending image to inferencing')
     objects = detect_objects(
         image_data,
         application.config['INFERENCING_API'] ,
