@@ -144,7 +144,8 @@ spec:
           - name: DOCKERFILE
             value: ./Containerfile
         runAfter:
-          - build-on-arm64
+          - git-clone
+          - tag
         taskRef:
           resolver: cluster
           params:
@@ -161,6 +162,7 @@ spec:
       - name: create-and-push-manifest
         runAfter:
           - build-on-amd64
+          - build-on-arm64
         params:
           - name: IMAGE
             value: 'image-registry.openshift-image-registry.svc.cluster.local:5000/$(params.target_namespace)/starter-app-python:$(tasks.tag.results.name)'
