@@ -120,6 +120,10 @@ def turn_right(degrees):
     response = requests.post(application.config['ROBOT_API'] + '/right/' + str(degrees),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
     return response.text
 
+def distance():
+    response = requests.get(application.config['ROBOT_API'] + '/distance' + '?user_key=' + application.config['ROBOT_NAME'] ,verify=False)
+    return response.text
+
 
 if __name__ == '__main__':
    application.run(host="0.0.0.0", port=8080)
