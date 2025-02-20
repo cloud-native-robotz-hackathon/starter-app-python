@@ -18,6 +18,9 @@ def detect_objects(
     processed_output = postprocess(
         model_response, confidence_threshold, iou_threshold
     )
+
+    from lib.object_rendering import draw_boxes
+
     return processed_output
 
 
