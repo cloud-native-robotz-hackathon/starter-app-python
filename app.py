@@ -18,7 +18,9 @@ Coordinates = namedtuple('Coordinates', 'confidence_score x_upper_left y_upper_l
 min_distance_to_obstacle = 300 # mm
 min_distance_to_move_forward_after_turn = 600 # mm
 angle_delta = 30 # deg
-debug_image_count = 0 # only for debug
+image_resolution_x = 640
+confidence_threshold = 0.6 # 60%
+hat_found_and_intercepted = False
 
 @application.route('/')
 def index():
@@ -61,38 +63,51 @@ def startRobot():
     # Assume plain objects
 
 
-    print ('\nInitial distance at 0°-> ', distance())
-    take_picture('static/view_initial.jpg')
+    # print ('\nInitial distance at 0°-> ', distance())
+    # take_picture('static/view_initial.jpg')
 
-    move_backward(50)
-    # turn_right(30)
+    # move_backward(40)
+    # turn_right(40)
+    # turn_left(20)
     # return
 
 
-    while thread_event.is_set():
+    while thread_event.is_set() and not hat_found_and_intercepted:
         #code...
 
-        # # Bypass obstacle, if directly in front
-        # if distance_int() <= min_distance_to_obstacle:
-        #     bypass_obstacle()
+        # Bypass obstacle, if directly in front
+        bypass_obstacle()
 
-
+        # Search for the hat: circle until hat is found and then move towards it.
+        # If not hat is found after full turn, move forward and try again.
         search_for_hat()
 
-        return
 
     print('Done')
 
 def search_for_hat():
 
-    print('### Search For Hat Mode - START ###')
+    global hat_found_and_intercepted
+
+    print('\n### Search For Hat Mode - START ###')
 
     turn_counter = 0
     while thread_event.is_set():
+        print('\n')
+
         objects = take_picture_and_detect_objects()
         coordinates = find_highest_score(objects)
 
-        if coordinates and coordinates.confidence_score > 0.5:
+        # Output distance from sensor
+        print ('Got distance -> ', distance())
+
+        # Check if there is an obstacle ahead
+        if distance_int() <= min_distance_to_obstacle:
+            print('### Search For Hat Mode - END: Obstacle detected! ###')
+
+            return
+
+        if coordinates and coordinates.confidence_score > confidence_threshold:
             print(f'''Object with highest score -> [
                 confidence score: {coordinates.confidence_score},
                 x upper left corner: {coordinates.x_upper_left},
@@ -101,32 +116,39 @@ def search_for_hat():
                 y lower right corner: {coordinates.y_lower_right},
                 object class: {coordinates.object_class} ]''')
 
-            move_x = (coordinates.x_upper_left + coordinates.x_lower_right) / 2
-            print(f'move_x: {move_x}')
-            if move_x < 320:
-                turn_left(10)
-            else:
-                turn_right(10)
+            # Align so that the most likely hat identified is in the center (within 20 pixels)
+            center_x = (coordinates.x_upper_left + coordinates.x_lower_right) / 2
+            print(f'center_x: {center_x}')
+    
+            if abs(image_resolution_x/2-center_x) >= 20: # center of hat needs to be within 20 pixels
+                if center_x < 320: # TODO switch from pixels to variable that is fed from image information
+                    turn_left(10)
+                else:
+                    turn_right(10)
 
+            # Determine size of the object in the image (not the real size!)
             delta = coordinates.x_lower_right - coordinates.x_upper_left
             print(f'delta: {delta}')
-            
+
             # hat_detection_threshold = 0.50 # i.e. 850%
             # delta_threshold = 150 # Mini-Hüte
-            delta_threshold = 300 # Standard-Hüte
+            delta_threshold = 280 # Standard-Hüte
             if delta < delta_threshold:
                 move_forward(10)
             else:
+                hat_found_and_intercepted = True
                 print('### Search For Hat Mode - END: OJECT FOUND ! ###')
                 return
 
         else:
             if turn_counter < 360:
-                turn_left(10)
-                turn_counter = turn_counter + 10
+                turn_left(45)
+                turn_counter = turn_counter + 45
             else:
-                print('### Search For Hat Mode - END: NO OBJECT FOUND ! ###')
-                return
+                # After a full circle, move forward and circle again to find the hat
+                move_forward(40)
+                turn_counter = 0
+
     
 
     print('### Search For Hat Mode - END ###')
@@ -187,35 +209,37 @@ def search_for_hat():
 
 
 def bypass_obstacle():
+    # Determine if an obstacle is in sight
+    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
 
-    global debug_image_count # only for debugging
+    # Only continue of an obstacle is ahead
+    if not obstacle_in_sight:
+        return
 
     angle_int = 0
 
     print('### Bypass Obstacle Mode - START ###')
 
-    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
     while obstacle_in_sight:
 
-        # Turn right
-        turn_right(angle_delta)
+        # Turn left
+        turn_left(angle_delta)
         angle_int += angle_delta # Build incremental angle to determine exit condition
 
         # Determine if obsctacle is still in sight
         obstacle_in_sight = distance_int() <= min_distance_to_move_forward_after_turn
 
-        print ('Got distance for ' + str(debug_image_count) + ' -> ', distance())
+        print ('Got distance -> ', distance())
         
         #debug
-        take_picture('static/view_' + str(debug_image_count) + '.jpg')
-        debug_image_count += 1
+        take_picture('static/current_view.jpg')
 
         # emergency exit
         if angle_int > 360:
-            print('### Bypass Obstacle Mode - NO ESCAPE! ###')
+            print('### Bypass Obstacle Mode - END: NO ESCAPE! ###')
             return
 
-    print('### Bypass Obstacle Mode - END ###')
+    print('### Bypass Obstacle Mode - END: SUCCESS! ###')
 
 
 def take_picture(image_file_name):
