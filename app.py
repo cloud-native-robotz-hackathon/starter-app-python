@@ -1,8 +1,9 @@
 from flask import Flask, render_template
 import requests
 import time
-from lib.preprocessing import preprocess_encoded_image
+from lib.preprocessing import preprocess_encoded_image, preprocess_image_file
 from lib.object_detection import detect_objects
+from lib.object_rendering import draw_boxes
 import threading
 from collections import namedtuple
 import base64
@@ -16,8 +17,8 @@ Coordinates = namedtuple('Coordinates', 'confidence_score x_upper_left y_upper_l
 
 
 min_distance_to_obstacle = 300 # mm
-min_distance_to_move_forward_after_turn = 600 # mm
-angle_delta = 30 # deg
+# min_distance_to_move_forward_after_turn = 600 # mm
+angle_delta = 90 # deg
 image_resolution_x = 640
 confidence_threshold = 0.6 # 60%
 hat_found_and_intercepted = False
@@ -68,9 +69,11 @@ def startRobot():
 
     # move_backward(40)
     # turn_right(40)
-    # turn_left(20)
+    # turn_left(180)
     # return
 
+    global hat_found_and_intercepted
+    hat_found_and_intercepted = False
 
     while thread_event.is_set() and not hat_found_and_intercepted:
         #code...
@@ -81,7 +84,6 @@ def startRobot():
         # Search for the hat: circle until hat is found and then move towards it.
         # If not hat is found after full turn, move forward and try again.
         search_for_hat()
-
 
     print('Done')
 
@@ -132,7 +134,7 @@ def search_for_hat():
 
             # hat_detection_threshold = 0.50 # i.e. 850%
             # delta_threshold = 150 # Mini-Hüte
-            delta_threshold = 280 # Standard-Hüte
+            delta_threshold = 280 # 250 # Standard-Hüte
             if delta < delta_threshold:
                 move_forward(10)
             else:
@@ -141,9 +143,9 @@ def search_for_hat():
                 return
 
         else:
-            if turn_counter < 360:
-                turn_left(45)
-                turn_counter = turn_counter + 45
+            if turn_counter <= 360:
+                turn_right(10)
+                turn_counter = turn_counter + 10
             else:
                 # After a full circle, move forward and circle again to find the hat
                 move_forward(40)
@@ -216,30 +218,70 @@ def bypass_obstacle():
     if not obstacle_in_sight:
         return
 
-    angle_int = 0
+    #debug
+    take_picture('static/current_view.jpg')
+
+    # Determine distance to obstacle
+    distance_to_object = distance_int()
+
+    # angle_int = 0
 
     print('### Bypass Obstacle Mode - START ###')
 
-    while obstacle_in_sight:
+    # Turn left
+    turn_left(angle_delta)
 
-        # Turn left
-        turn_left(angle_delta)
-        angle_int += angle_delta # Build incremental angle to determine exit condition
+    # Determine if there is another obstacle is in sight
+    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
+    print ('Got distance -> ', distance())
 
-        # Determine if obsctacle is still in sight
-        obstacle_in_sight = distance_int() <= min_distance_to_move_forward_after_turn
+    if not obstacle_in_sight:
+        # Move a bit forward and then go back again on course
+        move_forward(20)
+        turn_right(angle_delta)
 
-        print ('Got distance -> ', distance())
+
+    # Determine if original obsctacle is still in sight
+    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
+    print ('Got distance -> ', distance())
+
+    if not obstacle_in_sight:
+        # Move forward to bypass original obstacle
+        import math
+        move_forward(math.ceil(distance_to_object / 10) + 50)
+
+    
+
+
+
+
+    # while obstacle_in_sight:
+
+    #     # Turn left
+    #     turn_left(angle_delta)
+    #     angle_int += angle_delta # Build incremental angle to determine exit condition
+
+    #     # Determine if obsctacle is still in sight
+    #     obstacle_in_sight = distance_int() <= min_distance_to_move_forward_after_turn
+
+    #     print ('Got distance -> ', distance())
         
-        #debug
-        take_picture('static/current_view.jpg')
+    #     #debug
+    #     take_picture('static/current_view.jpg')
 
-        # emergency exit
-        if angle_int > 360:
-            print('### Bypass Obstacle Mode - END: NO ESCAPE! ###')
-            return
+    #     # emergency exit
+    #     if angle_int > 360:
+    #         print('### Bypass Obstacle Mode - END: NO ESCAPE! ###')
+    #         return
+
+    # # Move forward and the go back on course
+    # move_forward(40)
+    # turn_right(angle_int)
+
+
 
     print('### Bypass Obstacle Mode - END: SUCCESS! ###')
+
 
 
 def take_picture(image_file_name):
@@ -273,6 +315,14 @@ def take_picture_and_detect_objects():
         confidence_threshold=0.15,
         iou_threshold=0.2
     )
+
+    ## Add bounding box to image
+    image_box_path = "static/current_view_box.jpg"
+    with open(image_box_path, "wb") as fh:
+        fh.write(base64.urlsafe_b64decode(img_response.text))
+
+    xxx, scaling, padding = preprocess_image_file(image_box_path)
+    draw_boxes(image_box_path, objects, scaling, padding, class_labels)
 
     return objects
 
