@@ -3,7 +3,7 @@ import requests
 import time
 from lib.preprocessing import preprocess_encoded_image, preprocess_image_file
 from lib.object_detection import detect_objects
-from lib.object_rendering import draw_boxes
+from lib.object_rendering import add_model_info_to_image
 import threading
 from collections import namedtuple
 import base64
@@ -322,7 +322,7 @@ def take_picture_and_detect_objects():
         fh.write(base64.urlsafe_b64decode(img_response.text))
 
     xxx, scaling, padding = preprocess_image_file(image_box_path)
-    draw_boxes(image_box_path, objects, scaling, padding, class_labels)
+    add_model_info_to_image(image_box_path, objects, scaling, padding, class_labels)
 
     return objects
 

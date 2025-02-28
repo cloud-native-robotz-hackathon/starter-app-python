@@ -1,12 +1,13 @@
 import random
 import cv2
-
-from matplotlib import pyplot as plt
 import numpy as np
 
+# Add bounding boxes and confidence scores to an image
+def add_model_info_to_image(image_path, model_output, scaling, padding, class_labels):
+    # Read the original image
+    image = cv2.imread(image_path)
 
-def draw_boxes(image_path, model_output, scaling, padding, class_labels):
-    image = cv2.imread(image_path)  # Read image
+    # Loop through identified objects and draw boxes & write confidence scores
     colors = {
         name: [
             random.randint(0, 255) for _ in range(3)
@@ -33,9 +34,6 @@ def draw_boxes(image_path, model_output, scaling, padding, class_labels):
             thickness=2
         )
     img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
-    fig = plt.gcf()
-    fig.set_size_inches(24, 12)
-    plt.axis('off')
-    plt.imshow(img)
 
-    cv2.imwrite(image_path, img)  # write image
+    # Write amended image to file
+    cv2.imwrite(image_path, img)
