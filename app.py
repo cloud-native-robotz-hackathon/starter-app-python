@@ -185,7 +185,7 @@ def bypass_obstacle():
     # If original obstacle is not in sight anymore, move forward to bypass it
     if not obstacle_in_sight:
         # Move forward using the original distance to the obstacle and a buffer
-        move_forward(math.ceil(distance_to_object / 10) + 50)
+        move_forward(math.ceil(distance_to_object / 10) + 40)
 
     print('### Bypass Obstacle Mode - END: SUCCESS! ###')
 
