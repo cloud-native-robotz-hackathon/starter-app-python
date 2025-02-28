@@ -7,27 +7,31 @@ from lib.object_rendering import add_model_info_to_image
 import threading
 from collections import namedtuple
 import base64
+import math
 
+# Define variables for Flask proxy/web/application server
 application = Flask(__name__)
 application.config.from_object('config')
 thread_event = threading.Event()
 
+# Define model parameters
 class_labels = ['Fedora',]
 Coordinates = namedtuple('Coordinates', 'confidence_score x_upper_left y_upper_left x_lower_right y_lower_right object_class')
 
+# Define parameters for hat search and obstacle bypass algos
+min_distance_to_obstacle = 300 # mm; distance at which the obstacle bypass mode is activated
+angle_delta = 90 # deg; angle used for sidestepping obstacle
+image_resolution_x = 640 # pixels; resolution of camera used in robot
+confidence_threshold = 0.6 # e.g. 0.6 = 60%; confidence at which an object identified as hat is intercepted
+delta_threshold = 280 # pixels; delta for standard fedora (defines minimum desired pixel size of fedora in image)
+hat_found_and_intercepted = False # boolean; switch for a found and intercepted hat
 
-min_distance_to_obstacle = 300 # mm
-# min_distance_to_move_forward_after_turn = 600 # mm
-angle_delta = 90 # deg
-image_resolution_x = 640
-confidence_threshold = 0.6 # 60%
-hat_found_and_intercepted = False
-
+# Standard route
 @application.route('/')
 def index():
     return render_template('index.html')
 
-
+# Route for starting the application
 @application.route('/run', methods=['POST'])
 def run():
     try:
@@ -40,7 +44,7 @@ def run():
     except Exception as error:
         return str(error)
 
-
+# Route for stopping the application
 @application.route('/stop', methods=['POST'])
 def stop():
     try:
@@ -50,53 +54,43 @@ def stop():
     except Exception as error:
         return str(error)
 
-
+# Route for getting a status of the application
 @application.route('/status', methods=['POST'])
 def status():
     response = requests.get(application.config['ROBOT_API'] + '/remote_status?user_key=' + application.config['ROBOT_NAME'], verify=False)
     return response.text
 
-
+# Main function that is called when the "Run" button is pressed
 def startRobot():
-
-    # move_forward(1) corresponds to 10 mm.
-    # Strategy: if distance <20cm, go to obstacle_avoidance_mode
-    # Assume plain objects
-
-
-    # print ('\nInitial distance at 0°-> ', distance())
-    # take_picture('static/view_initial.jpg')
-
-    # move_backward(40)
-    # turn_right(40)
-    # turn_left(180)
-    # return
-
+    # Initialize switch for identifying found and intercepted hats across functions
     global hat_found_and_intercepted
     hat_found_and_intercepted = False
 
+    # Main loop running until one hat is properly identified and intercepted (or the app ist stopped)
     while thread_event.is_set() and not hat_found_and_intercepted:
-        #code...
-
-        # Bypass obstacle, if directly in front
+        # Check for an obstacle directly in front and bypass it, if existing
         bypass_obstacle()
 
-        # Search for the hat: circle until hat is found and then move towards it.
-        # If not hat is found after full turn, move forward and try again.
+        # Search for the hat and intercrept it
         search_for_hat()
 
     print('Done')
 
+# Search for the hat and intercrept it
+# Method: circle until hat is found and then move towards it. If
+# no hat is found after a full turn, move forward and try again.
 def search_for_hat():
-
+    # Define switch for identifying found and intercepted hats across functions
     global hat_found_and_intercepted
 
     print('\n### Search For Hat Mode - START ###')
 
+    # Circle, capture images, apply model and drive towards an identified object
     turn_counter = 0
     while thread_event.is_set():
         print('\n')
 
+        # Take picture and find the object with the highest probabilty of being a hat
         objects = take_picture_and_detect_objects()
         coordinates = find_highest_score(objects)
 
@@ -106,9 +100,9 @@ def search_for_hat():
         # Check if there is an obstacle ahead
         if distance_int() <= min_distance_to_obstacle:
             print('### Search For Hat Mode - END: Obstacle detected! ###')
-
             return
 
+        # Align to and drive towards identified object
         if coordinates and coordinates.confidence_score > confidence_threshold:
             print(f'''Object with highest score -> [
                 confidence score: {coordinates.confidence_score},
@@ -122,8 +116,9 @@ def search_for_hat():
             center_x = (coordinates.x_upper_left + coordinates.x_lower_right) / 2
             print(f'center_x: {center_x}')
     
-            if abs(image_resolution_x/2-center_x) >= 20: # center of hat needs to be within 20 pixels
-                if center_x < 320: # TODO switch from pixels to variable that is fed from image information
+            # Center of hat needs to be within 20 pixels
+            if abs(image_resolution_x/2-center_x) >= 20:
+                if center_x < 320:
                     turn_left(10)
                 else:
                     turn_right(10)
@@ -132,9 +127,8 @@ def search_for_hat():
             delta = coordinates.x_lower_right - coordinates.x_upper_left
             print(f'delta: {delta}')
 
-            # hat_detection_threshold = 0.50 # i.e. 850%
-            # delta_threshold = 150 # Mini-Hüte
-            delta_threshold = 280 # 250 # Standard-Hüte
+            # Move forward, if size of identified object in image is not big enough
+            # (i.e. if it's not close enough)
             if delta < delta_threshold:
                 move_forward(10)
             else:
@@ -143,6 +137,7 @@ def search_for_hat():
                 return
 
         else:
+            # Circle in case no hat could be identied
             if turn_counter <= 360:
                 turn_right(10)
                 turn_counter = turn_counter + 10
@@ -151,80 +146,22 @@ def search_for_hat():
                 move_forward(40)
                 turn_counter = 0
 
-    
-
     print('### Search For Hat Mode - END ###')
 
-    # dist = distance()
-    # print ('Initial distance at 0°-> ', dist)
-    # take_picture('static/view_initial.jpg')
-
-    # turn_left(30)
-    # dist = distance()
-    # print ('Got distance at 30° left -> ', dist)
-    # take_picture('static/view_30_l.jpg')
-
-    # turn_left(30)
-    # dist = distance()
-    # print ('Got distance at 60° left -> ', dist)
-    # take_picture('static/view_60_l.jpg')
-
-    # turn_left(30)
-    # dist = distance()
-    # print ('Got distance at 90° left -> ', dist)
-    # take_picture('static/view_90_l.jpg')
-
-    # turn_right(120)
-    # dist = distance()
-    # print ('Got distance at 30° right -> ', dist)
-    # take_picture('static/view_30_r.jpg')
-
-    # turn_right(30)
-    # dist = distance()
-    # print ('Got distance at 60° right -> ', dist)
-    # take_picture('static/view_60_r.jpg')
-
-    # turn_right(30)
-    # dist = distance()
-    # print ('Got distance at 90° right -> ', dist)
-    # take_picture('static/view_90_r.jpg')
-
-    # turn_left(90)
-    # dist = distance()
-    # print ('Got final distance at 0° -> ', dist)
-    # take_picture('static/view_final.jpg')
-
-
-
-    # move_forward(2)
-    # dist = distance()
-    # print ('Got distance -> ', dist)
-
-    # move_forward(2)
-    # dist = distance()
-    # print ('Got distance -> ', dist)
-
-    # move_forward(2)
-    # dist = distance()
-    # print ('Got distance -> ', dist)
-
-
-
+# Check for an obstacle directly in front and bypass it, if existing
 def bypass_obstacle():
     # Determine if an obstacle is in sight
     obstacle_in_sight = distance_int() <= min_distance_to_obstacle
 
-    # Only continue of an obstacle is ahead
+    # Only continue if an obstacle is ahead
     if not obstacle_in_sight:
         return
 
-    #debug
+    # For debugging only
     take_picture('static/current_view.jpg')
 
     # Determine distance to obstacle
     distance_to_object = distance_int()
-
-    # angle_int = 0
 
     print('### Bypass Obstacle Mode - START ###')
 
@@ -235,77 +172,48 @@ def bypass_obstacle():
     obstacle_in_sight = distance_int() <= min_distance_to_obstacle
     print ('Got distance -> ', distance())
 
+    # If no other obstacle is in the bypass direction, move a bit forward 
+    # and then go back again on course
     if not obstacle_in_sight:
-        # Move a bit forward and then go back again on course
         move_forward(20)
         turn_right(angle_delta)
 
-
-    # Determine if original obsctacle is still in sight
+    # Determine if original obsctacle is still in sight (after having turned back in original direction)
     obstacle_in_sight = distance_int() <= min_distance_to_obstacle
     print ('Got distance -> ', distance())
 
+    # If original obstacle is not in sight anymore, move forward to bypass it
     if not obstacle_in_sight:
-        # Move forward to bypass original obstacle
-        import math
+        # Move forward using the original distance to the obstacle and a buffer
         move_forward(math.ceil(distance_to_object / 10) + 50)
-
-    
-
-
-
-
-    # while obstacle_in_sight:
-
-    #     # Turn left
-    #     turn_left(angle_delta)
-    #     angle_int += angle_delta # Build incremental angle to determine exit condition
-
-    #     # Determine if obsctacle is still in sight
-    #     obstacle_in_sight = distance_int() <= min_distance_to_move_forward_after_turn
-
-    #     print ('Got distance -> ', distance())
-        
-    #     #debug
-    #     take_picture('static/current_view.jpg')
-
-    #     # emergency exit
-    #     if angle_int > 360:
-    #         print('### Bypass Obstacle Mode - END: NO ESCAPE! ###')
-    #         return
-
-    # # Move forward and the go back on course
-    # move_forward(40)
-    # turn_right(angle_int)
-
-
 
     print('### Bypass Obstacle Mode - END: SUCCESS! ###')
 
 
-
+# Take a picture using the camera of the robot
 def take_picture(image_file_name):
-    ## get current camera image from robot
+    # Get current camera image from robot
     print ('Taking picture from camera at ' + image_file_name)
     img_response = requests.get(application.config['ROBOT_API'] + '/camera'+ '?user_key=' + application.config['ROBOT_NAME'], verify=False)
     print ('    --> Response status code -> ', img_response.status_code)
 
+    # Write image to file
     with open(image_file_name, "wb") as fh:
         fh.write(base64.urlsafe_b64decode(img_response.text))
 
     return img_response
 
-
+# Take a picture using the camera of the robot and detect objects
 def take_picture_and_detect_objects():
-    ## Example calling the ML inferencing endpoint for object detection
+    # Example calling the ML inferencing endpoint for object detection
 
-    ## get current camera image from robot
+    # Get current camera image from robot
     img_response = take_picture('static/current_view.jpg')
 
-    ## normalize image
+    # Normalize image
     image_data, ratio, dwdh = preprocess_encoded_image(img_response.text)
 
-    ## send image to object detection endpoint
+    # Send image to object detection endpoint
     print ('Sending image to inferencing')
     objects = detect_objects(
         image_data,
@@ -316,17 +224,20 @@ def take_picture_and_detect_objects():
         iou_threshold=0.2
     )
 
-    ## Add bounding box to image
+    # Add bounding box to image
     image_box_path = "static/current_view_box.jpg"
+    # - Write original image to file
     with open(image_box_path, "wb") as fh:
         fh.write(base64.urlsafe_b64decode(img_response.text))
 
-    xxx, scaling, padding = preprocess_image_file(image_box_path)
+    # - Process image and add model info (bounding boxes & confidence scores) 
+    #   to image and write amended image back to file
+    _, scaling, padding = preprocess_image_file(image_box_path)
     add_model_info_to_image(image_box_path, objects, scaling, padding, class_labels)
 
     return objects
 
-
+# Find highest confidence score of identified objects
 def find_highest_score(objects):
     # Initialize a variable to store the coordinates with the highest score
     detected_object = [0,0,0,0,0,0]
@@ -346,26 +257,27 @@ def find_highest_score(objects):
 
     return
 
-
+# Move robot forward
 def move_forward(length):
     response = requests.post(application.config['ROBOT_API'] + '/forward/' + str(length),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
     return response.text
 
-
+# Move robot backward
 def move_backward(length):
     response = requests.post(application.config['ROBOT_API'] + '/backward/' + str(length),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
     return response.text
 
-
+# Turn robot left
 def turn_left(degrees):
     response = requests.post(application.config['ROBOT_API'] + '/left/' + str(degrees),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
     return response.text
 
-
+# Turn robot right
 def turn_right(degrees):
     response = requests.post(application.config['ROBOT_API'] + '/right/' + str(degrees),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
     return response.text
 
+# Obtain distance from robot's distance sensor
 def distance():
     response = requests.get(application.config['ROBOT_API'] + '/distance' + '?user_key=' + application.config['ROBOT_NAME'] ,verify=False)
     return response.text
@@ -374,5 +286,6 @@ def distance():
 def distance_int():
     return int(''.join(distance()))
 
+# Main function that is called after app started
 if __name__ == '__main__':
    application.run(host="0.0.0.0", port=8080)
