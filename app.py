@@ -62,132 +62,8 @@ def status():
 
 # Main function that is called when the "Run" button is pressed
 def startRobot():
-    # Initialize switch for identifying found and intercepted hats across functions
-    global hat_found_and_intercepted
-    hat_found_and_intercepted = False
-
-    # Main loop running until one hat is properly identified and intercepted (or the app ist stopped)
-    while thread_event.is_set() and not hat_found_and_intercepted:
-        # Check for an obstacle directly in front and bypass it, if existing
-        bypass_obstacle()
-
-        # Search for the hat and intercrept it
-        search_for_hat()
-
+    # Drop your code here
     print('Done')
-
-# Search for the hat and intercrept it
-# Method: circle until hat is found and then move towards it. If
-# no hat is found after a full turn, move forward and try again.
-def search_for_hat():
-    # Define switch for identifying found and intercepted hats across functions
-    global hat_found_and_intercepted
-
-    print('\n### Search For Hat Mode - START ###')
-
-    # Circle, capture images, apply model and drive towards an identified object
-    turn_counter = 0
-    while thread_event.is_set():
-        print('\n')
-
-        # Take picture and find the object with the highest probabilty of being a hat
-        objects = take_picture_and_detect_objects()
-        coordinates = find_highest_score(objects)
-
-        # Output distance from sensor
-        print ('Got distance -> ', distance())
-
-        # Check if there is an obstacle ahead
-        if distance_int() <= min_distance_to_obstacle:
-            print('### Search For Hat Mode - END: Obstacle detected! ###')
-            return
-
-        # Align to and drive towards identified object
-        if coordinates and coordinates.confidence_score > confidence_threshold:
-            print(f'''Object with highest score -> [
-                confidence score: {coordinates.confidence_score},
-                x upper left corner: {coordinates.x_upper_left},
-                y upper left corner: {coordinates.y_upper_left},
-                x lower right corner: {coordinates.x_lower_right},
-                y lower right corner: {coordinates.y_lower_right},
-                object class: {coordinates.object_class} ]''')
-
-            # Align so that the most likely hat identified is in the center (within 20 pixels)
-            center_x = (coordinates.x_upper_left + coordinates.x_lower_right) / 2
-            print(f'center_x: {center_x}')
-    
-            # Center of hat needs to be within 20 pixels
-            if abs(image_resolution_x/2-center_x) >= 20:
-                if center_x < 320:
-                    turn_left(10)
-                else:
-                    turn_right(10)
-
-            # Determine size of the object in the image (not the real size!)
-            delta = coordinates.x_lower_right - coordinates.x_upper_left
-            print(f'delta: {delta}')
-
-            # Move forward, if size of identified object in image is not big enough
-            # (i.e. if it's not close enough)
-            if delta < delta_threshold:
-                move_forward(10)
-            else:
-                hat_found_and_intercepted = True
-                print('### Search For Hat Mode - END: OJECT FOUND ! ###')
-                return
-
-        else:
-            # Circle in case no hat could be identied
-            if turn_counter <= 360:
-                turn_right(10)
-                turn_counter = turn_counter + 10
-            else:
-                # After a full circle, move forward and circle again to find the hat
-                move_forward(40)
-                turn_counter = 0
-
-    print('### Search For Hat Mode - END ###')
-
-# Check for an obstacle directly in front and bypass it, if existing
-def bypass_obstacle():
-    # Determine if an obstacle is in sight
-    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
-
-    # Only continue if an obstacle is ahead
-    if not obstacle_in_sight:
-        return
-
-    # For debugging only
-    take_picture('static/current_view.jpg')
-
-    # Determine distance to obstacle
-    distance_to_object = distance_int()
-
-    print('### Bypass Obstacle Mode - START ###')
-
-    # Turn left
-    turn_left(angle_delta)
-
-    # Determine if there is another obstacle is in sight
-    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
-    print ('Got distance -> ', distance())
-
-    # If no other obstacle is in the bypass direction, move a bit forward 
-    # and then go back again on course
-    if not obstacle_in_sight:
-        move_forward(20)
-        turn_right(angle_delta)
-
-    # Determine if original obsctacle is still in sight (after having turned back in original direction)
-    obstacle_in_sight = distance_int() <= min_distance_to_obstacle
-    print ('Got distance -> ', distance())
-
-    # If original obstacle is not in sight anymore, move forward to bypass it
-    if not obstacle_in_sight:
-        # Move forward using the original distance to the obstacle and a buffer
-        move_forward(math.ceil(distance_to_object / 10) + 40)
-
-    print('### Bypass Obstacle Mode - END: SUCCESS! ###')
 
 
 # Take a picture using the camera of the robot
@@ -230,7 +106,7 @@ def take_picture_and_detect_objects():
     with open(image_box_path, "wb") as fh:
         fh.write(base64.urlsafe_b64decode(img_response.text))
 
-    # - Process image and add model info (bounding boxes & confidence scores) 
+    # - Process image and add model info (bounding boxes & confidence scores)
     #   to image and write amended image back to file
     _, scaling, padding = preprocess_image_file(image_box_path)
     add_model_info_to_image(image_box_path, objects, scaling, padding, class_labels)
