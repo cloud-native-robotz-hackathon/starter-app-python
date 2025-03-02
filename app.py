@@ -18,14 +18,6 @@ thread_event = threading.Event()
 class_labels = ['Fedora',]
 Coordinates = namedtuple('Coordinates', 'confidence_score x_upper_left y_upper_left x_lower_right y_lower_right object_class')
 
-# Define parameters for hat search and obstacle bypass algos
-min_distance_to_obstacle = 300 # mm; distance at which the obstacle bypass mode is activated
-angle_delta = 90 # deg; angle used for sidestepping obstacle
-image_resolution_x = 640 # pixels; resolution of camera used in robot
-confidence_threshold = 0.6 # e.g. 0.6 = 60%; confidence at which an object identified as hat is intercepted
-delta_threshold = 280 # pixels; delta for standard fedora (defines minimum desired pixel size of fedora in image)
-hat_found_and_intercepted = False # boolean; switch for a found and intercepted hat
-
 # Standard route
 @application.route('/')
 def index():
