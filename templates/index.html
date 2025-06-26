@@ -1,101 +1,284 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Streamer</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Robot Control Interface</title>
+    <!-- Google Fonts: Orbitron for a techy feel -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons for iconography -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <!-- Tailwind CSS for utility classes -->
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
+        /* Custom styles for the tech/robot theme */
         body {
-            font-family: 'Inter', sans-serif;
+            font-family: 'Orbitron', sans-serif;
+            background-color: #0a0f18;
+            /* Deep space blue */
+            color: #e0e0e0;
+            /* Light grey text */
+            background-image:
+                radial-gradient(circle at 1px 1px, rgba(200, 200, 255, 0.1) 1px, transparent 0),
+                radial-gradient(circle at 10px 10px, rgba(200, 200, 255, 0.05) 1px, transparent 0);
+            background-size: 20px 20px;
+        }
+
+        /* Main container with a glowing border effect */
+        .hud-container {
+            background-color: rgba(13, 22, 41, 0.8);
+            border: 1px solid #00aaff;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.3), inset 0 0 10px rgba(0, 170, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        /* Style for the video stream panel to look like a HUD */
+        .video-panel {
+            border: 1px solid #00aaff;
+            background: linear-gradient(145deg, rgba(0, 20, 40, 0.5), rgba(0, 10, 20, 0.5));
+            box-shadow: 0 0 10px rgba(0, 170, 255, 0.2);
+            position: relative;
+        }
+
+        /* Corner accents for the HUD panels */
+        .video-panel::before,
+        .video-panel::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            border-color: #00ddff;
+            border-style: solid;
+        }
+
+        .video-panel::before {
+            top: -2px;
+            left: -2px;
+            border-width: 2px 0 0 2px;
+        }
+
+        .video-panel::after {
+            bottom: -2px;
+            right: -2px;
+            border-width: 0 2px 2px 0;
+        }
+
+        /* Custom button styling */
+        .glow-btn {
+            background-color: transparent;
+            border: 1px solid #00aaff;
+            color: #00eaff;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            box-shadow: 0 0 5px rgba(0, 170, 255, 0.5);
+        }
+
+        .glow-btn:hover {
+            background-color: rgba(0, 170, 255, 0.2);
+            color: #ffffff;
+            box-shadow: 0 0 15px rgba(0, 170, 255, 0.8);
+        }
+
+        .glow-btn:active {
+            transform: scale(0.97);
+        }
+
+        /* Styling for the status messages */
+        .status-output {
+            min-height: 2.5rem;
+            /* Reserve space */
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px dashed rgba(0, 170, 255, 0.3);
+            color: #00eaff;
+            font-family: monospace;
             display: flex;
-            justify-content: center;
             align-items: center;
-            min-height: 100vh;
-            background-color: #f0f2f5;
+            justify-content: center;
         }
-        .container {
-            border: 2px solid #cbd5e1; /* Tailwind slate-300 */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-            transition: all 0.3s ease-in-out;
-            max-width: 90%; /* Responsive width */
-        }
-        img {
-            max-width: 100%; /* Ensure image scales within container */
-            height: auto; /* Maintain aspect ratio */
-            display: block; /* Remove extra space below image */
-            border-radius: 0.5rem; /* Rounded corners for the image */
+
+        /* Style for the text part of the logo */
+        .logo-text {
+            fill: #67e8f9;
+            /* Tailwind cyan-300 */
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
-    <div class="container bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
-        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Live Image Stream</h1>
 
-        <div id="loading" class="text-center text-lg text-blue-500 mb-4 animate-pulse" style="display: none;">
-            Loading image...
+<body class="flex items-center justify-center min-h-screen p-4">
+
+    <main class="hud-container w-full max-w-7xl mx-auto p-6 rounded-lg grid grid-cols-1 lg:grid-cols-5 gap-8">
+        <!-- Left Column: Controls -->
+        <div class="lg:col-span-2 flex flex-col justify-center space-y-8">
+            <header class="text-center">
+                <div class="flex justify-center items-center gap-x-4 mb-2">
+                    <!-- Use img tag to load the SVG from the new endpoint -->
+                    <img src="/templates/rh-logo2.svg" alt="Red Hat Logo" class="h-12 w-auto">
+                    <h1 class="text-5xl font-bold text-cyan-300 drop-shadow-[0_0_8px_rgba(0,234,255,0.7)]">R-CTRL</h1>
+                </div>
+                <p class="text-cyan-400">Robotic Operations Interface</p>
+            </header>
+
+            <!-- Control Buttons -->
+            <div class="space-y-6">
+                <!-- Check Status -->
+                <div class="control-group">
+                    <button type="button"
+                        class="glow-btn w-full py-3 px-4 rounded-md flex items-center justify-center gap-3"
+                        onclick="checkStatus()">
+                        <i class="bi bi-hdd-stack"></i> Check Status
+                    </button>
+                    <div id="state" class="status-output mt-2 p-2 rounded-md text-sm">Awaiting status...</div>
+                </div>
+                <!-- Run -->
+                <div class="control-group">
+                    <button type="button"
+                        class="glow-btn w-full py-3 px-4 rounded-md flex items-center justify-center gap-3"
+                        onclick="runRobot()">
+                        <i class="bi bi-play-fill"></i> Initiate Run
+                    </button>
+                    <div id="start-output" class="status-output mt-2 p-2 rounded-md text-sm">Run command pending.</div>
+                </div>
+                <!-- Stop -->
+                <div class="control-group">
+                    <button type="button"
+                        class="glow-btn w-full py-3 px-4 rounded-md flex items-center justify-center gap-3"
+                        onclick="stopRobot()">
+                        <i class="bi bi-stop-fill"></i> Emergency Stop
+                    </button>
+                    <div id="stop-output" class="status-output mt-2 p-2 rounded-md text-sm">Stop command pending.</div>
+                </div>
+            </div>
         </div>
 
-        <div class="relative w-full aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
-            <img id="streamedImage" src="" alt="Streamed Image" class="w-full h-full object-contain rounded-lg">
-        </div>
+        <!-- Right Column: Video Stream -->
+        <div class="lg:col-span-3 flex flex-col">
+            <h2 class="text-2xl font-bold text-center mb-4 text-cyan-300">Live Visual Feed</h2>
+            <!-- Message area with fixed height to prevent layout jumps -->
+            <div id="loading" class="text-center text-lg text-cyan-400 mb-4 animate-pulse min-h-7"
+                style="visibility: hidden;"></div>
 
-        <p class="text-sm text-gray-600 mt-4 text-center">
-            Images are updated every 2 seconds from the Flask backend.
-        </p>
-    </div>
+            <div
+                class="video-panel w-full aspect-video bg-black rounded-lg overflow-hidden flex items-center justify-center p-1">
+                <!-- SVG Placeholder for Robot Camera -->
+                <svg id="placeholder-robot" class="w-1/3 h-1/3 text-cyan-500/40 animate-pulse" viewBox="0 0 100 100"
+                    xmlns="http://www.w3.org/2000/svg">
+                    <g stroke="currentColor" stroke-width="1">
+                        <circle cx="50" cy="50" r="48" fill="none" />
+                        <circle cx="50" cy="50" r="35" fill="none" />
+                        <circle cx="50" cy="50" r="5" fill="currentColor" />
+                        <line x1="5" y1="50" x2="30" y2="50" stroke-width="2" />
+                        <line x1="70" y1="50" x2="95" y2="50" stroke-width="2" />
+                        <line x1="50" y1="5" x2="50" y2="30" stroke-width="2" />
+                        <line x1="50" y1="70" x2="50" y2="95" stroke-width="2" />
+                        <path d="M 25 25 L 5 25 L 5 5" fill="none" stroke-width="3" />
+                        <path d="M 75 25 L 95 25 L 95 5" fill="none" stroke-width="3" />
+                        <path d="M 25 75 L 5 75 L 5 95" fill="none" stroke-width="3" />
+                        <path d="M 75 75 L 95 75 L 95 95" fill="none" stroke-width="3" />
+                    </g>
+                </svg>
+                <!-- Image tag for the actual stream -->
+                <img id="streamedImage" src="" alt="Live Stream from Robot"
+                    class="w-full h-full object-contain rounded-md" style="display: none;">
+            </div>
+            <p class="text-xs text-cyan-500 mt-2 text-center">
+                Frame Refresh Rate: 2s | Link: Secure
+            </p>
+        </div>
+    </main>
 
     <script>
-        // Get references to the image and loading elements
+        // --- Element References ---
         const streamedImage = document.getElementById('streamedImage');
         const loadingMessage = document.getElementById('loading');
+        const placeholderRobot = document.getElementById('placeholder-robot');
 
-        // Function to fetch and display the image
-        async function fetchImage() {
-            // Show loading message while fetching
-            loadingMessage.style.display = 'block';
-            //streamedImage.style.display = 'none'; // Hide the old image
-
+        // --- Control Functions (Modernized with Fetch) ---
+        // FIX: Attach functions to window object to ensure they are globally accessible
+        window.sendCommand = async function (endpoint, outputElementId) {
+            const outputElement = document.getElementById(outputElementId);
+            outputElement.textContent = 'Sending command...';
             try {
-                // Make a fetch request to the Flask endpoint
-                const response = await fetch('/get_stream');
-
-                // Check if the request was successful
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                // Parse the JSON response
-                const data = await response.json();
-
-                // Check if the image data exists in the response
-                if (data && data.image) {
-                    // Update the image source with the base64 data
-                    streamedImage.src = `data:image/png;base64,${data.image}`;
-                    streamedImage.style.display = 'block'; // Show the new image
-                } else {
-                    console.error('No image data found in the response.');
-                }
+                // Use absolute URL to prevent parsing errors
+                const response = await fetch(`${window.location.origin}/${endpoint}`, { method: 'POST' });
+                const result = await response.text();
+                outputElement.textContent = `Response: ${result}`;
             } catch (error) {
-                console.error('Error fetching image:', error);
-                // Optionally display an error message to the user
-                loadingMessage.textContent = 'Failed to load image. Retrying...';
-                loadingMessage.style.color = 'red';
-            } finally {
-                // Hide loading message once done (even if there's an error)
-                if (streamedImage.style.display === 'block') { // Only hide if image loaded successfully
-                    loadingMessage.style.display = 'none';
-                }
+                console.error(`Error sending command to ${endpoint}:`, error);
+                outputElement.textContent = `Error: Connection failed.`;
             }
         }
 
-        // Fetch the first image immediately when the page loads
+        window.checkStatus = function () {
+            console.log("Button click: Calling checkStatus() which triggers fetch to /status");
+            window.sendCommand('status', 'state');
+        }
+
+        window.runRobot = function () {
+            console.log("Button click: Calling runRobot() which triggers fetch to /run");
+            window.sendCommand('run', 'start-output');
+        }
+
+        window.stopRobot = function () {
+            console.log("Button click: Calling stopRobot() which triggers fetch to /stop");
+            window.sendCommand('stop', 'stop-output');
+        }
+
+        // --- Image Streaming Function ---
+        async function fetchImage() {
+            // Show "Establishing link..." message if no error is currently shown
+            if (loadingMessage.style.color !== 'rgb(255, 68, 68)') {
+                loadingMessage.textContent = 'Establishing link...';
+            }
+            loadingMessage.style.visibility = 'visible';
+
+            if (streamedImage.style.display === 'none') {
+                placeholderRobot.style.opacity = '0.5';
+            }
+
+            try {
+                // Use absolute URL to prevent parsing errors
+                const response = await fetch(`${window.location.origin}/get_stream`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                const data = await response.json();
+                if (data && data.image) {
+                    // Success: Hide placeholder and show image
+                    placeholderRobot.style.display = 'none';
+                    streamedImage.style.display = 'block';
+                    streamedImage.src = `data:image/png;base64,${data.image}`;
+
+                    // Hide message area on success
+                    loadingMessage.style.visibility = 'hidden';
+                    loadingMessage.style.color = '#00eaff'; // Reset color for next time
+                } else {
+                    // Response OK, but no image data
+                    throw new Error('No image data in response.');
+                }
+            } catch (error) {
+                console.error('Error fetching image:', error);
+                // Keep the error message visible
+                // Note: The user requested to remove the "Link lost" text, 
+                // so we will just ensure the space is held without text.
+                loadingMessage.textContent = '';
+
+                // Error: Ensure placeholder is visible and live image is hidden
+                placeholderRobot.style.display = 'block';
+                placeholderRobot.style.opacity = '1';
+                streamedImage.style.display = 'none';
+            }
+        }
+
+        // --- Page Load Initializer ---
         document.addEventListener('DOMContentLoaded', () => {
-            fetchImage();
-            // Set an interval to continuously fetch images every 2 seconds (2000 milliseconds)
-            setInterval(fetchImage, 2000);
+            fetchImage(); // Fetch the first image immediately
+            setInterval(fetchImage, 2000); // Fetch new images every 2 seconds
         });
     </script>
 </body>
+
 </html>

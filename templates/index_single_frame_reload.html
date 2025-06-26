@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Streamer</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f2f5;
+        }
+        .container {
+            border: 2px solid #cbd5e1; /* Tailwind slate-300 */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease-in-out;
+            max-width: 90%; /* Responsive width */
+        }
+        img {
+            max-width: 100%; /* Ensure image scales within container */
+            height: auto; /* Maintain aspect ratio */
+            display: block; /* Remove extra space below image */
+            border-radius: 0.5rem; /* Rounded corners for the image */
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+    <div class="container bg-white p-6 rounded-lg shadow-xl flex flex-col items-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6 text-center">Live Image Stream</h1>
+
+        <div id="loading" class="text-center text-lg text-blue-500 mb-4 animate-pulse" style="display: none;">
+            Loading image...
+        </div>
+
+        <div class="relative w-full aspect-w-16 aspect-h-9 bg-gray-200 rounded-lg overflow-hidden flex items-center justify-center">
+            <img id="streamedImage" src="" alt="Streamed Image" class="w-full h-full object-contain rounded-lg">
+        </div>
+
+        <p class="text-sm text-gray-600 mt-4 text-center">
+            Images are updated every 2 seconds from the Flask backend.
+        </p>
+    </div>
+
+    <script>
+        // Get references to the image and loading elements
+        const streamedImage = document.getElementById('streamedImage');
+        const loadingMessage = document.getElementById('loading');
+
+        // Function to fetch and display the image
+        async function fetchImage() {
+            // Show loading message while fetching
+            loadingMessage.style.display = 'block';
+            //streamedImage.style.display = 'none'; // Hide the old image
+
+            try {
+                // Make a fetch request to the Flask endpoint
+                const response = await fetch('/get_stream');
+
+                // Check if the request was successful
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                // Parse the JSON response
+                const data = await response.json();
+
+                // Check if the image data exists in the response
+                if (data && data.image) {
+                    // Update the image source with the base64 data
+                    streamedImage.src = `data:image/png;base64,${data.image}`;
+                    streamedImage.style.display = 'block'; // Show the new image
+                } else {
+                    console.error('No image data found in the response.');
+                }
+            } catch (error) {
+                console.error('Error fetching image:', error);
+                // Optionally display an error message to the user
+                loadingMessage.textContent = 'Failed to load image. Retrying...';
+                loadingMessage.style.color = 'red';
+            } finally {
+                // Hide loading message once done (even if there's an error)
+                if (streamedImage.style.display === 'block') { // Only hide if image loaded successfully
+                    loadingMessage.style.display = 'none';
+                }
+            }
+        }
+
+        // Fetch the first image immediately when the page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchImage();
+            // Set an interval to continuously fetch images every 2 seconds (2000 milliseconds)
+            setInterval(fetchImage, 2000);
+        });
+    </script>
+</body>
+</html>

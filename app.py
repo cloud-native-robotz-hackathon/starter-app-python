@@ -1,4 +1,5 @@
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_from_directory
+from jinja2.exceptions import TemplateNotFound
 import requests
 import time
 from lib.preprocessing import preprocess_encoded_image, preprocess_image_file
@@ -11,6 +12,7 @@ import math
 import random
 import cv2
 import numpy as np
+import os
 
 
 # Define variables for Flask proxy/web/application server
@@ -460,6 +462,34 @@ def distance():
 # Return distance as integer
 def distance_int():
     return int(''.join(distance()))
+
+# NEW: Generic route to serve other HTML files from the 'templates' folder.
+@application.route('/<string:page_name>')
+def serve_page(page_name):
+    """
+    Renders any .html file from the 'templates' folder.
+    For example, a request to /about will attempt to render templates/about.html.
+    """
+    try:
+        # Attempt to render the requested HTML file
+        return render_template(f'{page_name}.html')
+    except TemplateNotFound:
+        # If the template file doesn't exist, return a 404 error
+        return "<h1>Page not found</h1><p>The requested page does not exist.</p>", 404
+    except Exception as e:
+        # Handle other potential errors
+        print(f"An error occurred while trying to serve page {page_name}: {e}")
+        return "<h1>Server Error</h1><p>An internal error occurred.</p>", 500
+
+
+# NEW: Route to serve static files (like svg) from the templates folder
+@application.route('/templates/<path:filename>')
+def serve_template_asset(filename):
+    """
+    Serves a static file from the 'templates' directory.
+    This is used to serve the rh-logo.svg file.
+    """
+    return send_from_directory(os.path.join(application.root_path, 'templates'), filename)
 
 # Main function that is called after app started
 if __name__ == '__main__':
