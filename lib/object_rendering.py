@@ -1,10 +1,9 @@
-import random
 import cv2
 import numpy as np
+import random
 
-# Add bounding boxes and confidence scores to an image
 def add_model_info_to_image(image_path, model_output, scaling, padding, class_labels):
-    # Read the original image
+    # Read the original image (in BGR format)
     image = cv2.imread(image_path)
 
     # Loop through identified objects and draw boxes & write confidence scores
@@ -30,10 +29,11 @@ def add_model_info_to_image(image_path, model_output, scaling, padding, class_la
             (box[0], box[1] - 2),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.75,
-            [0, 255, 0],
+            [0, 255, 0], # This is green in BGR, so it will appear correctly
             thickness=2
         )
-    img = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+    # The cv2.cvtColor line has been removed. 'image' is still in BGR.
 
-    # Write amended image to file
-    cv2.imwrite(image_path, img)
+    # Write the amended BGR image to file. cv2.imwrite expects BGR.
+    cv2.imwrite(image_path, image)
+
