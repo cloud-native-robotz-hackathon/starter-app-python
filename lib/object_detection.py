@@ -1,5 +1,11 @@
 import numpy as np
-from requests import post
+import requests
+from functools import lru_cache
+
+# Create a session for connection pooling
+session = requests.Session()
+session.mount('http://', requests.adapters.HTTPAdapter(pool_connections=5, pool_maxsize=10))
+session.mount('https://', requests.adapters.HTTPAdapter(pool_connections=5, pool_maxsize=10))
 
 
 def detect_objects(
@@ -36,23 +42,39 @@ def _serialize(image):
 
 
 def _get_model_response(payload, prediction_url, token, classes_count):
+    """Optimized with connection pooling, timeout, and better error handling."""
     headers = {'Authorization': f'Bearer {token}'}
-    raw_response = post(prediction_url, json=payload, headers=headers)
     try:
+        raw_response = session.post(
+            prediction_url, 
+            json=payload, 
+            headers=headers,
+            timeout=30  # 30 second timeout for inference
+        )
+        
+        if raw_response.status_code != 200:
+            print(f'Inference API error: {raw_response.status_code}')
+            return None
+            
         response = raw_response.json()
-    except Exception:
-        print(f'Failed to deserialize service response.\n'
-              f'Status code: {raw_response.status_code}\n'
-              f'Response body: {raw_response.text}')
-        return None
-    try:
+        
+        if 'outputs' not in response:
+            print(f'Invalid response format from inference API: {response}')
+            return None
+            
         model_output = response['outputs']
-    except Exception:
-        print(f'Failed to extract model output from service response.\n'
-              f'Service response: {response}')
+        unpacked_output = _unpack(model_output, classes_count)
+        return unpacked_output
+        
+    except requests.exceptions.Timeout:
+        print('Inference API request timed out after 30 seconds')
         return None
-    unpacked_output = _unpack(model_output, classes_count)
-    return unpacked_output
+    except requests.exceptions.RequestException as e:
+        print(f'Request error: {e}')
+        return None
+    except Exception as e:
+        print(f'Unexpected error in model inference: {e}')
+        return None
 
 
 def _unpack(model_output, classes_count):

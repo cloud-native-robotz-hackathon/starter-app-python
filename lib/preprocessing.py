@@ -3,6 +3,7 @@ from glob import glob
 from io import BytesIO
 from os import path
 from pickle import dump
+from functools import lru_cache
 
 from PIL import Image, ImageOps
 import numpy as np
@@ -47,22 +48,27 @@ def _scan_images_folder(images_folder):
 
 
 def _transform(image, image_size=640):
+    """Optimized image transformation with improved memory efficiency."""
     image, ratio, dwdh = _letterbox_image(image, image_size, auto=False)
-    image = np.array(image).transpose((2, 0, 1))  # HWC->CHW for PyTorch model
-    image = np.expand_dims(image, 0)  # Model expects an array of images
-    image = np.ascontiguousarray(image)
-    # Speed up things by rewriting the array contiguously in memory
+    
+    # More efficient array operations
+    image_array = np.array(image, dtype=np.float32)  # Convert to float32 immediately
+    image_array /= 255.0  # Normalize to [0-1]
+    
+    # Transpose and expand dimensions in one go
+    image_array = image_array.transpose((2, 0, 1))  # HWC->CHW for PyTorch model
+    image_array = np.expand_dims(image_array, 0)  # Model expects an array of images
+    
+    # Ensure contiguous memory layout for better performance
+    image_array = np.ascontiguousarray(image_array)
+    
+    return image_array, ratio, dwdh
 
-    im = image.astype(np.float32)  # Model expects float32 data type
-    im /= 255  # Convert RGB values [0-255] to [0-1]
-    return im, ratio, dwdh
 
-
-def _letterbox_image(
-        im, image_size, color=(114, 114, 114), auto=True, scaleup=True, stride=32):
-
-    # Resize and pad image while meeting stride-multiple constraints
-    shape = im.size  # current shape [width, height]
+@lru_cache(maxsize=64)
+def _get_letterbox_params(width, height, image_size, auto=True, scaleup=True, stride=32):
+    """Cache letterbox parameters for repeated image sizes."""
+    shape = (width, height)
     new_shape = image_size
     if isinstance(new_shape, int):
         new_shape = (new_shape, new_shape)
@@ -82,7 +88,18 @@ def _letterbox_image(
     dw /= 2  # divide padding into 2 sides
     dh /= 2
 
-    if shape != new_unpad[::-1]:  # resize
+    return new_unpad, r, (dw, dh)
+
+def _letterbox_image(
+        im, image_size, color=(114, 114, 114), auto=True, scaleup=True, stride=32):
+    """Optimized letterbox function with parameter caching."""
+    # Get cached parameters
+    new_unpad, r, (dw, dh) = _get_letterbox_params(
+        im.size[0], im.size[1], image_size, auto, scaleup, stride
+    )
+
+    # Resize if needed
+    if im.size != new_unpad[::-1]:
         im = im.resize(new_unpad, Image.BILINEAR)
 
     # Add border

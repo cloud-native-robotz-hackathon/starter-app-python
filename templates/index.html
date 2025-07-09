@@ -184,8 +184,8 @@
                 <img id="streamedImage" src="" alt="Live Stream from Robot"
                     class="w-full h-full object-contain rounded-md" style="display: none;">
             </div>
-            <p class="text-xs text-cyan-500 mt-2 text-center">
-                Frame Refresh Rate: 2s | Link: Secure
+            <p id="frame-rate-info" class="text-xs text-cyan-500 mt-2 text-center">
+                Frame Refresh Rate: 10s (Idle) | Link: Secure
             </p>
         </div>
     </main>
@@ -195,15 +195,19 @@
         const streamedImage = document.getElementById('streamedImage');
         const loadingMessage = document.getElementById('loading');
         const placeholderRobot = document.getElementById('placeholder-robot');
+        const frameRateInfo = document.getElementById('frame-rate-info');
+
+        // FIX: Add a variable to hold the interval ID
+        let streamInterval = null;
+        const IDLE_RATE = 10000; // 10 seconds
+        const ACTIVE_RATE = 2000; // 2 seconds
 
         // --- Control Functions (Modernized with Fetch) ---
-        // FIX: Attach functions to window object to ensure they are globally accessible
-        window.sendCommand = async function (endpoint, outputElementId) {
+        window.sendCommand = async function (endpoint, outputElementId, method = 'POST') {
             const outputElement = document.getElementById(outputElementId);
             outputElement.textContent = 'Sending command...';
             try {
-                // Use absolute URL to prevent parsing errors
-                const response = await fetch(`${window.location.origin}/${endpoint}`, { method: 'POST' });
+                const response = await fetch(`${window.location.origin}/${endpoint}`, { method: method });
                 const result = await response.text();
                 outputElement.textContent = `Response: ${result}`;
             } catch (error) {
@@ -214,25 +218,40 @@
 
         window.checkStatus = function () {
             console.log("Button click: Calling checkStatus() which triggers fetch to /status");
-            window.sendCommand('status', 'state');
+            window.sendCommand('status', 'state', 'GET');  // Use GET method for status endpoint
         }
 
+        // FIX: runRobot now controls the streaming rate
         window.runRobot = function () {
             console.log("Button click: Calling runRobot() which triggers fetch to /run");
             window.sendCommand('run', 'start-output');
+            setStreamInterval(ACTIVE_RATE, "Active");
         }
 
+        // FIX: stopRobot now controls the streaming rate
         window.stopRobot = function () {
             console.log("Button click: Calling stopRobot() which triggers fetch to /stop");
             window.sendCommand('stop', 'stop-output');
+            setStreamInterval(IDLE_RATE, "Idle");
+        }
+
+        // FIX: New function to manage the streaming interval
+        function setStreamInterval(rate, state) {
+            // Clear any existing interval to prevent multiple loops
+            if (streamInterval) {
+                clearInterval(streamInterval);
+            }
+            console.log(`Setting stream interval to ${rate}ms for ${state} state.`);
+            frameRateInfo.textContent = `Frame Refresh Rate: ${rate/1000}s (${state}) | Link: Secure`;
+
+            // Fetch the first image immediately, then start the interval
+            fetchImage();
+            streamInterval = setInterval(fetchImage, rate);
         }
 
         // --- Image Streaming Function ---
         async function fetchImage() {
-            // Show "Establishing link..." message if no error is currently shown
-            if (loadingMessage.style.color !== 'rgb(255, 68, 68)') {
-                loadingMessage.textContent = 'Establishing link...';
-            }
+            loadingMessage.textContent = 'Establishing link...';
             loadingMessage.style.visibility = 'visible';
 
             if (streamedImage.style.display === 'none') {
@@ -240,33 +259,22 @@
             }
 
             try {
-                // Use absolute URL to prevent parsing errors
                 const response = await fetch(`${window.location.origin}/get_stream`);
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
                 const data = await response.json();
                 if (data && data.image) {
-                    // Success: Hide placeholder and show image
                     placeholderRobot.style.display = 'none';
                     streamedImage.style.display = 'block';
                     streamedImage.src = `data:image/png;base64,${data.image}`;
-
-                    // Hide message area on success
                     loadingMessage.style.visibility = 'hidden';
-                    loadingMessage.style.color = '#00eaff'; // Reset color for next time
                 } else {
-                    // Response OK, but no image data
                     throw new Error('No image data in response.');
                 }
             } catch (error) {
                 console.error('Error fetching image:', error);
-                // Keep the error message visible
-                // Note: The user requested to remove the "Link lost" text, 
-                // so we will just ensure the space is held without text.
                 loadingMessage.textContent = '';
-
-                // Error: Ensure placeholder is visible and live image is hidden
                 placeholderRobot.style.display = 'block';
                 placeholderRobot.style.opacity = '1';
                 streamedImage.style.display = 'none';
@@ -274,9 +282,9 @@
         }
 
         // --- Page Load Initializer ---
+        // FIX: Start with a slow, idle stream on page load
         document.addEventListener('DOMContentLoaded', () => {
-            fetchImage(); // Fetch the first image immediately
-            setInterval(fetchImage, 2000); // Fetch new images every 2 seconds
+            setStreamInterval(IDLE_RATE, "Idle");
         });
     </script>
 </body>
