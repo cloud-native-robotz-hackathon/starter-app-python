@@ -8,7 +8,6 @@ Start Workspace based in `https://github.com/cloud-native-robotz-hackathon/start
 
 F1 -> Tasks: Run Task -> devfile -> devfile: “Run the application"
 
-
 ### via Terminal
 
 Install requirements
@@ -37,7 +36,8 @@ $ gunicorn -b 0.0.0.0:8080 app --reload
 
 In the config.py set to following variables
 
-- `ROBOT_API` = URL of the robot REST Api
+- `ROBOT_API_ENDPOINT` = IP or Hostname of edge-controller endpoint. If set ROBOT_API will be ignored and overwritten to: `http://${ROBOT_API_ENDPOINT}:5000/`
+- `ROBOT_API` = URL of the robot REST Api, example: http://robot:5000/
 - `API_TOKEN` = The token fo your robot/team
 - `INFERENCING_API` = The Url of the object detection inferencing service
 
@@ -69,3 +69,20 @@ Changing python files will automatically reload the application. For chnages in 
 ## Running the Application on the OpenShift Cluster
 
 The app is prepared with a S2I configuration. You can directly create a pipeline from this repo in the OpenSHift Developer View.
+
+## Local build & push
+
+```shell
+export VERSION=$(date +%Y%m%d%H%M)
+
+git tag $VERSION
+
+export IMAGE="quay.io/cloud-native-robotz-hackathon/starter-app-python:${VERSION}"
+
+podman rmi $IMAGE
+podman manifest rm ${IMAGE}
+podman build --platform linux/amd64,linux/arm64  --manifest ${IMAGE}  .
+podman manifest push ${IMAGE}
+
+git push --tags 
+```
