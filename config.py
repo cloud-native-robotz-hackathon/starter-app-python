@@ -14,7 +14,7 @@ elif os.environ.get('ROBOT_API_ENDPOINT') is not None:
     ROBOT_API_ENDPOINT = os.environ.get('ROBOT_API_ENDPOINT')
     ROBOT_API = f"http://{ROBOT_API_ENDPOINT}:5000/"
 else:
-    ROBOT_API = 'http://hub-controller-live.hub-controller.svc.cluster.local:8080/robot'
+    ROBOT_API = 'http://api.hub-controller.svc.cluster.local/robot'
 
 ROBOT_NAME = os.environ.get('ROBOT_NAME', '<REPLACE_WITH_ROBOT_NAME>')
 INFERENCING_API = os.environ.get('INFERENCING_API', '<REPLACE_WITH_INFERENCING_API>')
