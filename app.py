@@ -1,13 +1,15 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, jsonify, send_from_directory
+from jinja2.exceptions import TemplateNotFound
 import requests
 import time
-from lib.preprocessing import preprocess_encoded_image, preprocess_image_file
-from lib.object_detection import detect_objects
-from lib.object_rendering import add_model_info_to_image
 import threading
-from collections import namedtuple
-import base64
-import math
+import os
+from lib.robot_utils import (
+    log_with_timestamp,
+    bypass_obstacle,
+    search_for_hat_step,
+    get_stream_data
+)
 
 # Define variables for Flask proxy/web/application server
 application = Flask(__name__)
@@ -16,144 +18,72 @@ thread_event = threading.Event()
 
 # Define model parameters
 class_labels = ['Fedora',]
-Coordinates = namedtuple('Coordinates', 'confidence_score x_upper_left y_upper_left x_lower_right y_lower_right object_class')
+image_resolution_x = 640
+confidence_threshold = 0.6
+delta_threshold = 280
+hat_found_and_intercepted = False
+min_distance_to_obstacle = 300
+angle_delta = 90
 
-# Standard route
 @application.route('/')
 def index():
     return render_template('index.html')
 
-# Route for starting the application
 @application.route('/run', methods=['POST'])
 def run():
     try:
+        log_with_timestamp("/run endpoint called.")
         thread_event.set()
-
+        log_with_timestamp("Creating and starting the startRobot thread.")
         thread = threading.Thread(target=startRobot)
         thread.start()
-
+        log_with_timestamp("/run endpoint finished and returned 'Robot started'.")
         return "Robot started"
     except Exception as error:
         return str(error)
 
-# Route for stopping the application
 @application.route('/stop', methods=['POST'])
 def stop():
     try:
+        log_with_timestamp("/stop endpoint called.")
         thread_event.clear()
-
         return "Robot stopped"
     except Exception as error:
         return str(error)
 
-# Route for getting a status of the application
 @application.route('/status', methods=['POST'])
 def status():
     response = requests.get(application.config['ROBOT_API'] + '/remote_status?user_key=' + application.config['ROBOT_NAME'], verify=False)
     return response.text
 
-# Main function that is called when the "Run" button is pressed
+@application.route('/get_stream', methods=['GET'])
+def stream():
+    """
+    Web route to get the processed image stream.
+    Calls the utility function to handle the logic.
+    """
+    data, status_code = get_stream_data(application.config, class_labels)
+    return jsonify(data), status_code
+
 def startRobot():
-    # Drop your code here
-    print('Done')
+    log_with_timestamp("startRobot thread has started.")
+    while thread_event.is_set():
+        log_with_timestamp("Entering main control loop.")
 
+        # add your code here
 
-# Take a picture using the camera of the robot
-def take_picture(image_file_name):
-    # Get current camera image from robot
-    print ('Taking picture from camera at ' + image_file_name)
-    img_response = requests.get(application.config['ROBOT_API'] + '/camera'+ '?user_key=' + application.config['ROBOT_NAME'], verify=False)
-    print ('    --> Response status code -> ', img_response.status_code)
+    log_with_timestamp("Exited main control loop.")
 
-    # Write image to file
-    with open(image_file_name, "wb") as fh:
-        fh.write(base64.urlsafe_b64decode(img_response.text))
+@application.route('/<string:page_name>')
+def serve_page(page_name):
+    try:
+        return render_template(f'{page_name}.html')
+    except TemplateNotFound:
+        return "<h1>Page not found</h1><p>The requested page does not exist.</p>", 404
 
-    return img_response
+@application.route('/templates/<path:filename>')
+def serve_template_asset(filename):
+    return send_from_directory(os.path.join(application.root_path, 'templates'), filename)
 
-# Take a picture using the camera of the robot and detect objects
-def take_picture_and_detect_objects():
-    # Example calling the ML inferencing endpoint for object detection
-
-    # Get current camera image from robot
-    img_response = take_picture('static/current_view.jpg')
-
-    # Normalize image
-    image_data, ratio, dwdh = preprocess_encoded_image(img_response.text)
-
-    # Send image to object detection endpoint
-    print ('Sending image to inferencing')
-    objects = detect_objects(
-        image_data,
-        application.config['INFERENCING_API'] ,
-        token=application.config['INFERENCING_API_TOKEN'],
-        classes_count=len(class_labels),
-        confidence_threshold=0.15,
-        iou_threshold=0.2
-    )
-
-    # Add bounding box to image
-    image_box_path = "static/current_view_box.jpg"
-    # - Write original image to file
-    with open(image_box_path, "wb") as fh:
-        fh.write(base64.urlsafe_b64decode(img_response.text))
-
-    # - Process image and add model info (bounding boxes & confidence scores)
-    #   to image and write amended image back to file
-    _, scaling, padding = preprocess_image_file(image_box_path)
-    add_model_info_to_image(image_box_path, objects, scaling, padding, class_labels)
-
-    return objects
-
-# Find highest confidence score of identified objects
-def find_highest_score(objects):
-    # Initialize a variable to store the coordinates with the highest score
-    detected_object = [0,0,0,0,0,0]
-
-    # Iterate over the detected objects and update the highest score if necessary
-    for o in objects:
-        # Check if the current object is of the class 'Fedora' and has a higher score than the previous highest score
-        if o[-1] == 0 and detected_object[-2] < o[-2]:
-            # Update the detected object with the new highest score
-            detected_object = o
-
-    # Check if there was at least one object detected with a confidence score greater than 0
-    if (detected_object[-2] > 0):
-        # Create a Coordinates namedtuple with the information of the object with the highest score
-        coordinates = Coordinates(detected_object[-2], detected_object[0], detected_object[1], detected_object[2], detected_object[3], detected_object[-1])
-        return coordinates
-
-    return
-
-# Move robot forward
-def move_forward(length):
-    response = requests.post(application.config['ROBOT_API'] + '/forward/' + str(length),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
-    return response.text
-
-# Move robot backward
-def move_backward(length):
-    response = requests.post(application.config['ROBOT_API'] + '/backward/' + str(length),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
-    return response.text
-
-# Turn robot left
-def turn_left(degrees):
-    response = requests.post(application.config['ROBOT_API'] + '/left/' + str(degrees),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
-    return response.text
-
-# Turn robot right
-def turn_right(degrees):
-    response = requests.post(application.config['ROBOT_API'] + '/right/' + str(degrees),data={"user_key": application.config['ROBOT_NAME']} ,verify=False)
-    return response.text
-
-# Obtain distance from robot's distance sensor
-def distance():
-    response = requests.get(application.config['ROBOT_API'] + '/distance' + '?user_key=' + application.config['ROBOT_NAME'] ,verify=False)
-    return response.text
-
-# Return distance as integer
-def distance_int():
-    return int(''.join(distance()))
-
-# Main function that is called after app started
 if __name__ == '__main__':
    application.run(host="0.0.0.0", port=8080)
