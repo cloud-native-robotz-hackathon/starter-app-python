@@ -8,7 +8,16 @@ from lib.robot_utils import (
     log_with_timestamp,
     bypass_obstacle,
     search_for_hat_step,
-    get_stream_data
+    get_stream_data,
+    move_forward,
+    turn_left,
+    turn_right,
+    turn_left,
+    move_backward,
+    distance,
+    distance_int,
+    take_picture_and_detect_objects,
+    find_highest_score
 )
 
 # Define variables for Flask proxy/web/application server
@@ -70,7 +79,11 @@ def startRobot():
     while thread_event.is_set():
         log_with_timestamp("Entering main control loop.")
 
-        # add your code here
+        # Drop your code here
+
+        print('Done')
+
+        break
 
     log_with_timestamp("Exited main control loop.")
 
