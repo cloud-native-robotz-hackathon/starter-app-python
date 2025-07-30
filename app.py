@@ -4,6 +4,8 @@ import requests
 import time
 import threading
 import os
+import config
+import math
 from lib.robot_utils import (
     log_with_timestamp,
     bypass_obstacle,
@@ -12,28 +14,40 @@ from lib.robot_utils import (
     move_forward,
     turn_left,
     turn_right,
-    turn_left,
     move_backward,
     distance,
     distance_int,
     take_picture_and_detect_objects,
-    find_highest_score
+    find_highest_score,
+    take_picture
 )
 
-# Define variables for Flask proxy/web/application server
+# Defined variables for Flask proxy/web/application server
 application = Flask(__name__)
 application.config.from_object('config')
 thread_event = threading.Event()
 
-# Define model parameters
-class_labels = ['Fedora',]
+# Defined model parameters
 image_resolution_x = 640
-confidence_threshold = 0.6
 delta_threshold = 280
 hat_found_and_intercepted = False
 min_distance_to_obstacle = 300
 angle_delta = 90
 
+# Function you will be working on
+def startRobot():
+    log_with_timestamp("startRobot thread has started.")
+
+    while thread_event.is_set():
+        log_with_timestamp("Entering main control loop.")
+
+        # Drop your code here
+        print('Done')
+
+    log_with_timestamp("Exited main control loop.")
+
+
+# API and helper functions
 @application.route('/')
 def index():
     return render_template('index.html')
@@ -68,24 +82,11 @@ def status():
 @application.route('/get_stream', methods=['GET'])
 def stream():
     """
-    Web route to get the processed image stream.
+    Web route to get the plain camera image stream.
     Calls the utility function to handle the logic.
     """
-    data, status_code = get_stream_data(application.config, class_labels)
+    data, status_code = get_stream_data()
     return jsonify(data), status_code
-
-def startRobot():
-    log_with_timestamp("startRobot thread has started.")
-    while thread_event.is_set():
-        log_with_timestamp("Entering main control loop.")
-
-        # Drop your code here
-
-        print('Done')
-
-        break
-
-    log_with_timestamp("Exited main control loop.")
 
 @application.route('/<string:page_name>')
 def serve_page(page_name):
