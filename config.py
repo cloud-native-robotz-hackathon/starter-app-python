@@ -17,7 +17,7 @@ bind = os.environ.get('GUNICORN_BIND', '0.0.0.0:8080')
 static_folder='static'
 forwarded_allow_ips = '*'
 secure_scheme_headers = { 'X-Forwarded-Proto': 'https' }
-timeout = 240
+timeout = 600  # Increased from 240 to 600 seconds
 
 if os.environ.get('ROBOT_API') is not None:
     ROBOT_API = os.environ.get('ROBOT_API')

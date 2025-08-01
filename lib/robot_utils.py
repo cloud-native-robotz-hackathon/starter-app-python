@@ -116,35 +116,25 @@ def _decode_base64_with_padding(base64_string):
 
 def get_stream_data():
     """
-    Fetches a plain image from the robot camera and returns it as base64 data.
+    Serves the static/current_view.jpg image file as base64 data.
+    Returns an error if the file doesn't exist.
     """
+    import os
+
+    static_image_path = 'static/current_view.jpg'
+    if not os.path.exists(static_image_path):
+        #log_with_timestamp(f"Static image file not found: {static_image_path}")
+        return {"error": f"Image file not found: {static_image_path}"}, 404
+
     try:
-        img_response = requests.get(config.ROBOT_API + '/camera'+ '?user_key=' + config.ROBOT_NAME, verify=False)
-        base64_robot_image = img_response.text
-
-        # log_with_timestamp(f"Robot API response status: {img_response.status_code}")
-        # log_with_timestamp(f"Received base64 image data (length: {len(base64_robot_image)})")
-
-        # If the response is very short, it's likely an error message, not image data
-        if len(base64_robot_image) < 1000:  # Images are typically much longer
-            log_with_timestamp(f"Response too short for image data. Full response: '{base64_robot_image}'")
-            return {"error": f"Robot camera returned short response (likely error): {base64_robot_image}"}, 500
-
-        # Validate that we can decode the image
-        img_bytes = _decode_base64_with_padding(base64_robot_image)
-        np_arr = np.frombuffer(img_bytes, np.uint8)
-        original_cv_image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-
-        if original_cv_image is None:
-            log_with_timestamp(f"OpenCV decode failed. First 200 chars of base64: {base64_robot_image[:200]}")
-            raise ValueError("Could not decode base64 robot image into OpenCV format.")
-
-        # log_with_timestamp("Successfully decoded and validated robot camera image")
-        # Return the original image without any processing
-        return {"image": base64_robot_image}, 200
+        #log_with_timestamp(f"Serving static image: {static_image_path}")
+        with open(static_image_path, 'rb') as image_file:
+            image_bytes = image_file.read()
+            base64_image = base64.b64encode(image_bytes).decode('utf-8')
+            return {"image": base64_image}, 200
     except Exception as e:
-        log_with_timestamp(f"An unexpected error occurred in get_stream_data: {e}")
-        return {"error": f"Failed to get stream: {str(e)}"}, 500
+        log_with_timestamp(f"Failed to read static image {static_image_path}: {e}")
+        return {"error": f"Failed to read image file: {str(e)}"}, 500
 
 def take_picture(image_file_name):
     log_with_timestamp(f"Executing take_picture for '{image_file_name}'...")
