@@ -36,15 +36,9 @@ angle_delta = 90
 
 # Function you will be working on
 def startRobot():
-    log_with_timestamp("startRobot thread has started.")
 
-    while thread_event.is_set():
-        log_with_timestamp("Entering main control loop.")
-
-        # Drop your code here
-        print('Done')
-
-    log_with_timestamp("Exited main control loop.")
+    # Drop your code here
+    print('Done')
 
 
 # API and helper functions
