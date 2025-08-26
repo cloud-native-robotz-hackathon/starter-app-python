@@ -1,8 +1,27 @@
-schemaVersion: 2.2.2
+schemaVersion: 2.2.0
 metadata:
-  name: starter-app-python
+  name: starter-app-python-new
+attributes:
+  # Define a volume at the Pod level, backed by our ConfigMap
+  pod-overrides:
+    spec:
+      volumes:
+        - name: continue-config-volume
+          configMap:
+            name: continue-config
+            # Ensures file permissions are set correctly
+            defaultMode: 0644   
 components:
   - name: python
+    attributes:
+      # Mount the volume defined above into this specific container
+      container-overrides:
+        volumeMounts:
+          - name: continue-config-volume
+            # The target path inside the container where the file will be placed
+            mountPath: /home/user/.continue/config.json
+            # The key from the ConfigMap to mount. This makes it a file mount.
+            subPath: config.json
     container:
       image: registry.redhat.io/devspaces/udi-rhel8@sha256:bc5d28c434089a312ab0944662e7702481ca4e898ef278cf61c0f683f35718df
       volumeMounts:
