@@ -32,33 +32,19 @@ components:
   - name: venv
     volume:
       size: 1G
-events:
-  postStart:
-    - install-continue-extension
 commands:
-  - id: install-continue-extension
+  - id: install-continue-extension-manual
     exec:
-      label: "Install Continue Extension"
+      label: "Install Continue Extension (Manual Backup)"
       component: python
       commandLine: |
-        # Wait for Code Server to be ready and install extension with retries
-        sleep 10
-        for i in {1..3}; do
-          if command -v code >/dev/null 2>&1; then
-            echo "Attempt $i: Installing Continue extension..."
-            if code --install-extension continue.continue --force; then
-              echo "Continue extension installed successfully"
-              break
-            else
-              echo "Installation attempt $i failed, retrying..."
-              sleep 5
-            fi
-          else
-            echo "Code command not available, waiting..."
-            sleep 10
-          fi
-        done
-        echo "Extension installation process completed"
+        echo "Installing Continue extension manually..."
+        if command -v code >/dev/null 2>&1; then
+          code --install-extension continue.continue --force
+          echo "Extension installation completed"
+        else
+          echo "Code command not available"
+        fi
       group:
         kind: build
   - id: run
