@@ -12,21 +12,19 @@ attributes:
             # Ensures file permissions are set correctly
             defaultMode: 0644   
 components:
-  - name: python
-    attributes:
-      # Mount the volume defined above into this specific container
-      container-overrides:
-        volumeMounts:
-          - name: continue-config-volume
-            # The target path inside the container where the file will be placed
-            mountPath: /home/user/.continue/config.json
-            # The key from the ConfigMap to mount. This makes it a file mount.
-            subPath: config.json
+ - name: python
     container:
       image: registry.redhat.io/devspaces/udi-rhel9:latest
+      env:
+        - name: USE_NODEJS_VERSION
+          value: "20"
       volumeMounts:
         - name: venv
           path: /home/user/.venv
+        # Mount the config file directly, not the directory
+        - name: continue-config-volume
+          mountPath: /home/user/.continue-config/config.json
+          subPath: config.json
       memoryLimit: 2G
       mountSources: true
   - name: venv
