@@ -31,18 +31,18 @@ components:
     volume:
       size: 1G
 commands:
-  - id: install-continue-extension-manual
+  - id: setup-continue
     exec:
-      label: "Install Continue Extension (Manual Backup)"
+      label: "Setup Continue Extension"
       component: python
       commandLine: |
-        echo "Installing Continue extension manually..."
-        if command -v code >/dev/null 2>&1; then
-          code --install-extension continue.continue --force
-          echo "Extension installation completed"
-        else
-          echo "Code command not available"
-        fi
+        # Create Continue directory with proper ownership
+        mkdir -p /home/user/.continue
+        # Copy config to writable location
+        cp /home/user/.continue-config/config.json /home/user/.continue/config.json
+        # Install Continue extension
+        code --install-extension Continue.continue --force
+        echo "Continue extension setup completed!"
       group:
         kind: build
   - id: run
@@ -51,13 +51,11 @@ commands:
       component: python
       workingDir: ${PROJECTS_ROOT}/starter-app-python
       commandLine: >-
-
-          python -m venv /home/user/.venv/
-          source /home/user/.venv/bin/activate
-
-          pip install -r requirements.txt && export
-          PYTHONDONTWRITEBYTECODE=1 && export
-          PATH=$PATH:/home/user/.local/bin && gunicorn
-          -b 0.0.0.0:8080 app --reload
+        python -m venv /home/user/.venv/
+        source /home/user/.venv/bin/activate
+        pip install -r requirements.txt && export
+        PYTHONDONTWRITEBYTECODE=1 && export
+        PATH=$PATH:/home/user/.local/bin && gunicorn
+        -b 0.0.0.0:8080 app --reload
       group:
         kind: run
