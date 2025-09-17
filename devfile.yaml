@@ -2,17 +2,15 @@ schemaVersion: 2.2.0
 metadata:
   name: starter-app-python-new
 attributes:
-  # Define a volume at the Pod level, backed by our ConfigMap
   pod-overrides:
     spec:
       volumes:
         - name: continue-config-volume
           configMap:
             name: continue-config
-            # Ensures file permissions are set correctly
             defaultMode: 0644   
 components:
- - name: python
+  - name: python
     container:
       image: registry.redhat.io/devspaces/udi-rhel9:latest
       env:
