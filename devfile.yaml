@@ -2,28 +2,23 @@ schemaVersion: 2.2.0
 metadata:
   name: starter-app-python-new
 attributes:
-  # Define a volume at the Pod level, backed by our ConfigMap
   pod-overrides:
     spec:
       volumes:
         - name: continue-config-volume
           configMap:
             name: continue-config
-            # Ensures file permissions are set correctly
-            defaultMode: 0644   
+            defaultMode: 0644
 components:
   - name: python
     attributes:
-      # Mount the volume defined above into this specific container
       container-overrides:
         volumeMounts:
           - name: continue-config-volume
-            # The target path inside the container where the file will be placed
-            mountPath: /home/user/.continue/config.json
-            # The key from the ConfigMap to mount. This makes it a file mount.
+            mountPath: /tmp/continue-config
             subPath: config.json
     container:
-      image: registry.redhat.io/devspaces/udi-rhel8@sha256:bc5d28c434089a312ab0944662e7702481ca4e898ef278cf61c0f683f35718df
+      image: registry.redhat.io/devspaces/udi-rhel9@sha256:cca6cbf5adcb5ce83392795573fe258d468568bddc3ad3618297e9e6234cfb79
       volumeMounts:
         - name: venv
           path: /home/user/.venv
@@ -33,18 +28,21 @@ components:
     volume:
       size: 1G
 commands:
-  - id: install-continue-extension-manual
+  - id: setup-continue
     exec:
-      label: "Install Continue Extension (Manual Backup)"
+      label: "Setup Continue Extension"
       component: python
       commandLine: |
-        echo "Installing Continue extension manually..."
-        if command -v code >/dev/null 2>&1; then
-          code --install-extension continue.continue --force
-          echo "Extension installation completed"
-        else
-          echo "Code command not available"
-        fi
+        # Create Continue directory if it doesn't exist
+        mkdir -p /home/user/.continue
+
+        # Copy config from ConfigMap mount
+        cp /tmp/continue-config /home/user/.continue/config.json
+
+        # Verify the setup
+        echo "Continue configuration copied successfully!"
+        echo "Config location: /home/user/.continue/config.json"
+        ls -la /home/user/.continue/config.json
       group:
         kind: build
   - id: run
@@ -53,13 +51,10 @@ commands:
       component: python
       workingDir: ${PROJECTS_ROOT}/starter-app-python
       commandLine: >-
-
-          python -m venv /home/user/.venv/
-          source /home/user/.venv/bin/activate
-
-          pip install -r requirements.txt && export
-          PYTHONDONTWRITEBYTECODE=1 && export
-          PATH=$PATH:/home/user/.local/bin && gunicorn
-          -b 0.0.0.0:8080 app --reload
+        python -m venv /home/user/.venv/ &&
+        source /home/user/.venv/bin/activate &&
+        pip install -r requirements.txt &&
+        export PATH=$PATH:/home/user/.local/bin &&
+        gunicorn -b 0.0.0.0:8080 app --reload
       group:
         kind: run
