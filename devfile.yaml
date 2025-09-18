@@ -1,10 +1,27 @@
-schemaVersion: 2.2.2
+schemaVersion: 2.2.0
 metadata:
-  name: starter-app-python
+  name: starter-app-python-new
+attributes:
+  pod-overrides:
+    spec:
+      volumes:
+        - name: continue-config-volume
+          configMap:
+            name: continue-config
+            defaultMode: 0644   
 components:
   - name: python
+    attributes:
+      container-overrides:
+        volumeMounts:
+          - name: continue-config-volume
+            mountPath: /tmp/continue-config
+            subPath: config.json
     container:
       image: registry.redhat.io/devspaces/udi-rhel8@sha256:bc5d28c434089a312ab0944662e7702481ca4e898ef278cf61c0f683f35718df
+      env:
+        - name: USE_NODEJS_VERSION
+          value: "20"
       volumeMounts:
         - name: venv
           path: /home/user/.venv
@@ -14,19 +31,34 @@ components:
     volume:
       size: 1G
 commands:
+  - id: setup-continue
+    exec:
+      label: "Setup Continue Extension"
+      component: python
+      commandLine: |
+        # Create Continue directory if it doesn't exist
+        mkdir -p /home/user/.continue
+        
+        # Copy config from ConfigMap mount
+        cp /tmp/continue-config /home/user/.continue/config.json
+        
+        # Verify the setup
+        echo "Continue configuration copied successfully!"
+        echo "Config location: /home/user/.continue/config.json"
+        ls -la /home/user/.continue/config.json
+      group:
+        kind: build
   - id: run
     exec:
       label: "Run the application"
       component: python
       workingDir: ${PROJECTS_ROOT}/starter-app-python
       commandLine: >-
-
-          python -m venv /home/user/.venv/
-          source /home/user/.venv/bin/activate
-
-          pip install -r requirements.txt && export
-          PYTHONDONTWRITEBYTECODE=1 && export
-          PATH=$PATH:/home/user/.local/bin && gunicorn
-          -b 0.0.0.0:8080 app --reload
+        python -m venv /home/user/.venv/
+        source /home/user/.venv/bin/activate
+        pip install -r requirements.txt && export
+        PYTHONDONTWRITEBYTECODE=1 && export
+        PATH=$PATH:/home/user/.local/bin && gunicorn
+        -b 0.0.0.0:8080 app --reload
       group:
         kind: run
