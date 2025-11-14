@@ -243,15 +243,19 @@ def search_for_hat_step(turn_counter, image_resolution_x, delta_threshold, hat_f
     return turn_counter
 
 def move_forward(length):
+    length = int(length)  # Convert float to integer
     log_with_timestamp(f"Sending command: move_forward({length})")
     requests.post(f"{config.ROBOT_API}/forward/{length}",data={"user_key": config.ROBOT_NAME} ,verify=False)
 def move_backward(length):
+    length = int(length)  # Convert float to integer
     log_with_timestamp(f"Sending command: move_backward({length})")
     requests.post(f"{config.ROBOT_API}/backward/{length}",data={"user_key": config.ROBOT_NAME} ,verify=False)
 def turn_left(degrees):
+    degrees = int(degrees)  # Convert float to integer
     log_with_timestamp(f"Sending command: turn_left({degrees})")
     requests.post(f"{config.ROBOT_API}/left/{degrees}",data={"user_key": config.ROBOT_NAME} ,verify=False)
 def turn_right(degrees):
+    degrees = int(degrees)  # Convert float to integer
     log_with_timestamp(f"Sending command: turn_right({degrees})")
     requests.post(f"{config.ROBOT_API}/right/{degrees}",data={"user_key": config.ROBOT_NAME} ,verify=False)
 def distance():
