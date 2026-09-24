@@ -36,8 +36,8 @@ def _serialize(image):
 
 
 def _get_model_response(payload, prediction_url, token, classes_count):
-    headers = {'Authorization': f'Bearer {token}'}
-    raw_response = post(prediction_url, json=payload, headers=headers)
+    headers = {'Authorization': f'Bearer {token}'} if token else {}
+    raw_response = post(prediction_url, json=payload, headers=headers, verify=False)
     try:
         response = raw_response.json()
     except Exception:
@@ -45,14 +45,13 @@ def _get_model_response(payload, prediction_url, token, classes_count):
               f'Status code: {raw_response.status_code}\n'
               f'Response body: {raw_response.text}')
         return None
-    try:
-        model_output = response['outputs']
-    except Exception:
-        print(f'Failed to extract model output from service response.\n'
+    if raw_response.status_code != 200 or 'outputs' not in response:
+        print(f'Model server did not return outputs.\n'
+              f'URL: {prediction_url}\n'
+              f'Status code: {raw_response.status_code}\n'
               f'Service response: {response}')
         return None
-    unpacked_output = _unpack(model_output, classes_count)
-    return unpacked_output
+    return _unpack(response['outputs'], classes_count)
 
 
 def _unpack(model_output, classes_count):

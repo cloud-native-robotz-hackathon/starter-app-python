@@ -39,7 +39,9 @@ In the config.py set to following variables
 - `ROBOT_API_ENDPOINT` = IP or Hostname of edge-controller endpoint. If set ROBOT_API will be ignored and overwritten to: `http://${ROBOT_API_ENDPOINT}:5000/`
 - `ROBOT_API` = URL of the robot REST Api, example: http://robot:5000/
 - `API_TOKEN` = The token fo your robot/team
-- `INFERENCING_API` = The Url of the object detection inferencing service
+- `INFERENCING_API` = Base URL of the object detection inferencing service from the OpenShift AI dashboard (no path suffix). The app appends `/v2/models/<MODEL_NAME>/infer`.
+- `INFERENCING_API_TOKEN` = Bearer token for the model endpoint (if token auth is enabled)
+- `MODEL_NAME` = Deployed model / InferenceService name (default: `ovms`)
 
 
 To run this application on your local host:

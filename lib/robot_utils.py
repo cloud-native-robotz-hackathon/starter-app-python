@@ -159,7 +159,7 @@ def take_picture_and_detect_objects():
     log_with_timestamp("Detecting objects...")
     objects = detect_objects(
         image_data_for_detection,
-        config.INFERENCING_API,
+        config.get_inferencing_url(),
         token=config.INFERENCING_API_TOKEN,
         classes_count=len(config.CLASS_LABELS),
         confidence_threshold=config.CONFIDENCE_THRESHOLD,
