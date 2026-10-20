@@ -138,7 +138,7 @@ def get_stream_data():
 
 def take_picture(image_file_name):
     log_with_timestamp(f"Executing take_picture for '{image_file_name}'...")
-    img_response = requests.get(config.ROBOT_API + '/camera'+ '?user_key=' + config.ROBOT_NAME, verify=False)
+    img_response = requests.get(config.ROBOT_API + '/camera'+ '?user_key=' + config.ROBOT_NAME)
 
     image_bytes = _decode_base64_with_padding(img_response.text)
     write_file_async(image_file_name, image_bytes)

@@ -37,7 +37,7 @@ def _serialize(image):
 
 def _get_model_response(payload, prediction_url, token, classes_count):
     headers = {'Authorization': f'Bearer {token}'} if token else {}
-    raw_response = post(prediction_url, json=payload, headers=headers, verify=False)
+    raw_response = post(prediction_url, json=payload, headers=headers)
     try:
         response = raw_response.json()
     except Exception:
