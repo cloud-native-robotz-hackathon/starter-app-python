@@ -2,12 +2,22 @@ import os
 
 # modify these values
 ROBOT_NAME = os.environ.get('ROBOT_NAME', '<REPLACE_WITH_ROBOT_NAME>')
+# Base URL from the OpenShift AI dashboard (no path suffix)
 INFERENCING_API = os.environ.get('INFERENCING_API', '<REPLACE_WITH_INFERENCING_API>')
-INFERENCING_API_TOKEN  = os.environ.get('INFERENCING_API_TOKEN', '<REPLACE_WITH_INFERENCING_API_TOKEN>')
+INFERENCING_API_TOKEN = os.environ.get('INFERENCING_API_TOKEN', '<REPLACE_WITH_INFERENCING_API_TOKEN>')
+# Must match the InferenceService / model name in OpenShift AI
+MODEL_NAME = os.environ.get('MODEL_NAME', 'ovms')
 
 # Model parameters
 CONFIDENCE_THRESHOLD = 0.3
 CLASS_LABELS = ['Fedora']
+
+
+def get_inferencing_url(base_url=None, model_name=None):
+    """Build the OpenVINO/KServe V2 infer URL from the dashboard base endpoint."""
+    base = (base_url or INFERENCING_API).rstrip('/')
+    name = model_name or MODEL_NAME
+    return f'{base}/v2/models/{name}/infer'
 
 
 # Keep these settings as is
